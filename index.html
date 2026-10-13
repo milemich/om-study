@@ -223,6 +223,15 @@ select.input{appearance:auto}
   .note{break-inside:avoid}
 }
 
+/* Segnalazioni */
+.report-link,.report-done{display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)}
+.report-link svg,.report-done svg{width:14px;height:14px}
+.sheet-wrap{position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0 0 env(safe-area-inset-bottom,0px)}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 16px 24px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto;animation:up .2s ease-out}
+.radio{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;line-height:1.4}
+.radio:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.radio input{margin-top:3px;accent-color:var(--accent)}
+
 /* Admin */
 .table-wrap{overflow-x:auto;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
@@ -537,7 +546,7 @@ function viewQuestion() {
 
   $app.innerHTML = `<div class="wrap full" style="padding-top:0;padding-bottom:180px">${lessonTop(pct)}
     <div class="stack">
-      <div class="label q-type">${ico(tic)}${tl} · ${L.i + 1}/${L.questions.length}</div>
+      <div class="row" style="justify-content:space-between"><div class="label q-type">${ico(tic)}${tl} · ${L.i + 1}/${L.questions.length}</div>${reportLink(qq.id)}</div>
       <h2 class="q-prompt">${prompt}</h2>
       ${body}
     </div></div>
@@ -629,6 +638,7 @@ async function submitAnswer() {
     <h3>${ico(ok ? "circle-check" : "circle-x")}${ok ? praise : "Non proprio"}</h3>
     ${solution ? `<p style="white-space:pre-line"><b>Risposta corretta:</b> ${esc(solution)}</p>` : ""}
     ${res.explanation ? `<p>${esc(res.explanation)}</p>` : ""}
+    <div class="row" style="justify-content:flex-end">${reportLink(qq.id)}</div>
     <button class="btn block ${ok ? "ok" : "bad"}" id="next">${last ? "Vedi il risultato" : "Continua"}</button>
   </div></div>`;
   icons();
@@ -664,6 +674,54 @@ async function finishLesson() {
 }
 function badgeNew(b) {
   return `<div class="new-badge"><div class="bi">${ico(b.icon || "award")}</div><div><div class="label" style="color:var(--gold)">Nuovo badge</div><b>${esc(b.name)}</b><div class="small muted">${esc(b.description)}</div></div></div>`;
+}
+
+// ---------- SEGNALAZIONI ----------
+const REPORT_REASONS = {
+  not_in_summary: "La risposta non si trova nella sintesi / scheda di teoria",
+  wrong_answer: "La risposta indicata come corretta mi sembra sbagliata",
+  unclear: "La domanda o le opzioni sono poco chiare",
+  other: "Altro"
+};
+const reported = new Set();
+function reportLink(qid) {
+  return reported.has(qid)
+    ? `<span class="small muted report-done">${ico("flag")}Segnalata</span>`
+    : `<button type="button" class="link small report-link" data-report="${qid}">${ico("flag")}Segnala</button>`;
+}
+$app.addEventListener("click", e => {
+  const b = e.target.closest("[data-report]"); if (b) openReport(b.dataset.report);
+});
+function openReport(qid) {
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-wrap";
+  wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rpt">
+    <h2 id="rpt" style="font-size:1.3rem">Segnala un problema</h2>
+    <p class="small muted" style="margin:0">La segnalazione arriva all'amministratore, che farà correggere la domanda.</p>
+    <form class="stack" style="gap:10px" novalidate>
+      <fieldset class="stack" style="gap:8px;border:0;padding:0;margin:0">
+        <legend class="sr">Motivo</legend>
+        ${Object.entries(REPORT_REASONS).map(([k, v], i) => `<label class="radio"><input type="radio" name="reason" value="${k}" ${i === 0 ? "checked" : ""}><span>${v}</span></label>`).join("")}
+      </fieldset>
+      <div class="field"><label for="rcm">Dettagli (facoltativo)</label>
+        <textarea class="input" id="rcm" rows="3" maxlength="2000" placeholder="Es. nel libro la risposta è a pag. 54, oppure: secondo me è corretta anche la B"></textarea></div>
+      <div class="row" style="flex-wrap:wrap"><button type="button" class="btn ghost" data-close style="flex:1 1 120px">Annulla</button><button class="btn" style="flex:1 1 120px">${ico("send")}Invia</button></div>
+    </form></div>`;
+  document.body.appendChild(wrap); icons();
+  const close = () => wrap.remove();
+  wrap.addEventListener("click", e => { if (e.target === wrap || e.target.closest("[data-close]")) close(); });
+  document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
+  wrap.querySelector("input").focus();
+  wrap.querySelector("form").onsubmit = async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button:not([data-close])"); btn.disabled = true;
+    try {
+      await q(sb.from("question_reports").insert({ question_id: qid, reason: e.target.reason.value, comment: e.target.querySelector("textarea").value.trim() || null }));
+      reported.add(qid);
+      document.querySelectorAll(`[data-report="${qid}"]`).forEach(x => { x.outerHTML = reportLink(qid); }); icons();
+      close(); toast("Grazie, segnalazione inviata");
+    } catch (err) { toast(errText(err)); btn.disabled = false; }
+  };
 }
 
 // ---------- FLASHCARD ----------
@@ -1165,12 +1223,20 @@ async function viewAdmin() {
   if (S.me?.role !== "admin") return viewPath();
   render(`<div class="spinner"></div>`);
   try {
-    const [people, prog, modules, lessons] = await Promise.all([
+    const [people, prog, modules, lessons, reports] = await Promise.all([
       q(sb.from("profiles").select("*").order("xp", { ascending: false })),
       q(sb.from("lesson_progress").select("user_id,times_completed")),
       q(sb.from("modules").select("*").order("order_index")),
       q(sb.from("lessons").select("id,module_id")),
+      q(sb.from("question_reports").select("id,question_id,reason,comment,created_at,profiles(display_name),questions(prompt,lessons(title,order_index,modules(title)))").eq("status", "open").order("created_at")),
     ]);
+    const rgroups = [];
+    for (const r of reports) {
+      let g = rgroups.find(g => g.qid === r.question_id);
+      if (!g) rgroups.push(g = { qid: r.question_id, q: r.questions, items: [] });
+      g.items.push(r);
+    }
+    const where = qq => qq?.lessons ? `${qq.lessons.modules?.title || ""} · ${qq.lessons.order_index}. ${qq.lessons.title}` : "";
     const done = {}; prog.forEach(p => { if (p.times_completed > 0) done[p.user_id] = (done[p.user_id] || 0) + 1; });
     const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
     const fmt = d => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—";
@@ -1195,6 +1261,15 @@ async function viewAdmin() {
           <td>${p.email ? `<button class="link small" data-reset="${esc(p.email)}">Reinvia accesso</button>` : ""}</td></tr>`;
         }).join("")}
       </tbody></table></div>
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap"><h2 style="font-size:1.2rem">Segnalazioni sulle domande</h2>
+        ${rgroups.length ? `<button class="link small" id="rcopy">${ico("copy")}Copia elenco</button>` : ""}</div>
+      ${rgroups.length ? `<div class="stack" style="gap:10px">${rgroups.map(g => `<div class="card stack" style="gap:8px;padding:14px 16px">
+          <div class="small muted">${esc(where(g.q))}</div>
+          <b style="line-height:1.4">${esc(g.q?.prompt || "Domanda eliminata")}</b>
+          ${g.items.map(r => `<div class="small"><span class="pill off">${esc(REPORT_REASONS[r.reason] || r.reason)}</span> <span class="muted">${esc(r.profiles?.display_name || "")} · ${fmtDate(r.created_at)}</span>${r.comment ? `<div style="margin-top:4px;white-space:pre-wrap">«${esc(r.comment)}»</div>` : ""}</div>`).join("")}
+          <div class="row" style="gap:16px"><button class="link small" data-rres="${g.qid}" data-st="resolved">${ico("check")}Segna come corretta</button><button class="link small" data-rres="${g.qid}" data-st="dismissed" style="color:var(--ink-3)">${ico("x")}Archivia</button></div>
+        </div>`).join("")}</div>`
+        : `<div class="card"><p class="small muted" style="margin:0">Nessuna segnalazione aperta.</p></div>`}
       <h2 style="font-size:1.2rem">Moduli</h2>
       <div class="stack" style="gap:10px">${modules.map(m => `<div class="card row" style="justify-content:space-between;padding:14px 16px">
         <div style="min-width:0"><b>${esc(m.title)}</b><div class="small muted">${m.kind === "book" ? "Libro · " + lessons.filter(l => l.module_id === m.id).length + " capitoli" : lessons.filter(l => l.module_id === m.id).length + " lezioni"} ·<span class="pill ${m.is_published ? "on" : "off"}">${m.is_published ? "Visibile agli studenti" : "Bozza"}</span></div></div>
@@ -1215,6 +1290,17 @@ async function viewAdmin() {
       const { error } = await sb.functions.invoke("invite-user", { body: { email: b.dataset.reset, action: "reset", redirect_to: APP_URL } });
       toast(error ? "Invio non riuscito, riprova" : "Email di accesso inviata a " + b.dataset.reset); b.disabled = false;
     });
+    $app.querySelectorAll("[data-rres]").forEach(b => b.onclick = async () => {
+      const ids = rgroups.find(g => g.qid === b.dataset.rres).items.map(r => r.id);
+      try { await q(sb.from("question_reports").update({ status: b.dataset.st, resolved_at: new Date().toISOString() }).in("id", ids)); toast(b.dataset.st === "resolved" ? "Segnata come corretta" : "Segnalazione archiviata"); viewAdmin(); }
+      catch (e) { toast(errText(e)); }
+    });
+    const rc = document.getElementById("rcopy");
+    if (rc) rc.onclick = async () => {
+      const txt = "Segnalazioni aperte OM Study\n\n" + rgroups.map((g, i) => `${i + 1}. [${where(g.q)}] ${g.q?.prompt || ""}\n` +
+        g.items.map(r => `   - ${REPORT_REASONS[r.reason] || r.reason}${r.comment ? ": " + r.comment : ""}`).join("\n")).join("\n\n");
+      try { await navigator.clipboard.writeText(txt); toast("Elenco copiato"); } catch (e) { toast("Copia non riuscita"); }
+    };
     $app.querySelectorAll("[data-mod]").forEach(b => b.onclick = async () => {
       const pub = b.dataset.pub !== "true";
       try { await q(sb.from("modules").update({ is_published: pub }).eq("id", b.dataset.mod)); toast(pub ? "Modulo visibile agli studenti" : "Modulo nascosto"); viewAdmin(); }
