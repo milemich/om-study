@@ -203,6 +203,26 @@ svg.i{width:20px;height:20px;flex:none}
 .stat b{color:var(--ink)}
 .stat.gold b{color:var(--gold)} .stat.acc b{color:var(--accent)} .stat.flame b{color:var(--flame)}
 
+/* Note */
+.notes{display:flex;flex-direction:column}
+.note{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+.note:last-child{border-bottom:0}
+.note-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.note-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.note-act{display:flex;gap:16px}
+.note-act svg.i{width:16px;height:16px}
+.notes-cap{padding-top:14px;color:var(--accent)}
+textarea.input{resize:vertical;min-height:84px;line-height:1.5}
+select.input{appearance:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media print{
+  :root{--bg:#fff;--surface:#fff;--ink:#000;--ink-2:#333;--line:#ccc;--shadow:none}
+  .nav,.no-print,.note-act,.toast{display:none!important}
+  .wrap{padding:0!important;max-width:none}
+  .card{box-shadow:none;padding:0!important}
+  .note{break-inside:avoid}
+}
+
 /* Admin */
 .table-wrap{overflow-x:auto;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
@@ -757,9 +777,11 @@ async function viewBooks() {
         <span class="small muted">${read}/${ls.length} capitoli letti · ${passed}/${ls.length} quiz superati</span></div></button>`;
     }).join("");
     render(`<div class="stack"><div class="topbar"><h1 style="font-size:1.5rem">Libri</h1></div>${statChips()}
-      <p class="muted" style="margin:0">Per ogni capitolo trovi una sintesi, i concetti chiave e un quiz. Leggi il capitolo nel libro, poi mettiti alla prova.</p>
+      <p class="muted" style="margin:0">Per ogni capitolo trovi una sintesi, i concetti chiave e un quiz. Leggi il capitolo nel libro, prendi le tue note, poi mettiti alla prova.</p>
+      <button class="btn ghost" id="allnotes">${ico("notebook-pen")}Le mie note</button>
       ${cards || `<div class="card"><p class="muted" style="margin:0">Nessun libro disponibile per ora.</p></div>`}</div>`);
     $app.querySelectorAll("[data-book]").forEach(b => b.onclick = () => viewBook(b.dataset.book));
+    document.getElementById("allnotes").onclick = () => viewNotes(null);
   } catch (e) { renderError(e); }
 }
 async function viewBook(bookId) {
@@ -785,6 +807,7 @@ async function viewBook(bookId) {
         ${next ? `<button class="btn" id="cont" style="flex:1 1 200px">${ico("book-open")}${read || passed ? "Continua" : "Inizia"}: cap. ${next.order_index}</button>` : ""}
         <button class="btn ghost" id="gloss" style="flex:1 1 140px">${ico("book-a")}Glossario</button>
         <button class="btn ghost" id="fc" style="flex:1 1 140px">${ico("layers")}Flashcard</button>
+        <button class="btn ghost" id="bnotes" style="flex:1 1 140px">${ico("notebook-pen")}Le mie note</button>
       </div>
       <div class="chapters">${ls.map(l => {
         const r = data.read.has(l.id), p = data.prog[l.id];
@@ -801,6 +824,7 @@ async function viewBook(bookId) {
     if (next) document.getElementById("cont").onclick = () => viewChapter(next.id);
     document.getElementById("gloss").onclick = () => viewGlossary(book);
     document.getElementById("fc").onclick = () => viewCards(book.id, book.title);
+    document.getElementById("bnotes").onclick = () => viewNotes(book.id);
     $app.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => viewChapter(b.dataset.ch));
   } catch (e) { renderError(e); }
 }
@@ -810,13 +834,14 @@ async function viewChapter(lessonId) {
   try {
     const uid = S.session.user.id;
     const lesson = await q(sb.from("lessons").select("*").eq("id", lessonId).single());
-    const [book, siblings, terms, prog, readRow, nQ] = await Promise.all([
+    const [book, siblings, terms, prog, readRow, nQ, notes] = await Promise.all([
       q(sb.from("modules").select("id,title,author,cover_color").eq("id", lesson.module_id).single()),
       q(sb.from("lessons").select("id,order_index,title").eq("module_id", lesson.module_id).order("order_index")),
       q(sb.from("glossary_terms").select("term,definition").eq("lesson_id", lessonId).order("term")),
       q(sb.from("lesson_progress").select("best_score,times_completed").eq("user_id", uid).eq("lesson_id", lessonId).maybeSingle()),
       q(sb.from("chapter_reads").select("read_at").eq("user_id", uid).eq("lesson_id", lessonId).maybeSingle()),
-      sb.from("questions").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId)
+      sb.from("questions").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId),
+      q(sb.from("notes").select("*").eq("lesson_id", lessonId).order("created_at"))
     ]);
     const idx = siblings.findIndex(s => s.id === lessonId);
     const prev = siblings[idx - 1], next = siblings[idx + 1];
@@ -838,6 +863,20 @@ async function viewChapter(lessonId) {
         ${readRow ? "" : `<button class="btn ghost block" id="read">${ico("book-marked")}Ho letto il capitolo nel libro · +15 XP</button>`}
         <button class="btn block" id="quiz">${ico("play")}${prog ? "Rifai il quiz" : "Fai il quiz"} · ${nQ.count || 0} domande</button>
       </div>
+      <section class="stack" style="gap:8px">
+        <div class="row" style="justify-content:space-between"><div class="label">Le mie note</div><button class="link small" id="gonotes">Tutte le note del libro</button></div>
+        <div class="card stack" style="gap:12px">
+          <div id="nlist" class="notes">${notes.map(noteHTML).join("") || `<p class="small muted" style="margin:0" id="nempty">Ancora nessuna nota su questo capitolo. Scrivi qui pensieri, citazioni, domande per la lezione.</p>`}</div>
+          <form id="nf" class="stack" style="gap:8px" novalidate>
+            <label class="sr" for="nb">Nuova nota</label>
+            <textarea class="input" id="nb" rows="3" placeholder="Scrivi una nota mentre leggi…"></textarea>
+            <div class="row" style="flex-wrap:wrap">
+              <input class="input" id="np" style="flex:0 1 150px" placeholder="Pagina (facoltativa)" inputmode="text" autocomplete="off">
+              <button class="btn" id="nsave" style="flex:1 1 140px">${ico("plus")}Salva nota</button>
+            </div>
+          </form>
+        </div>
+      </section>
       <div class="row" style="justify-content:space-between">
         ${prev ? `<button class="link" id="prev">${ico("chevron-left")}Cap. ${prev.order_index}</button>` : "<span></span>"}
         ${next ? `<button class="link" id="next">Cap. ${next.order_index}${ico("chevron-right")}</button>` : "<span></span>"}
@@ -847,6 +886,21 @@ async function viewChapter(lessonId) {
     if (prev) document.getElementById("prev").onclick = () => viewChapter(prev.id);
     if (next) document.getElementById("next").onclick = () => viewChapter(next.id);
     document.getElementById("quiz").onclick = () => startLesson(lessonId, () => viewChapter(lessonId), true);
+    document.getElementById("gonotes").onclick = () => viewNotes(book.id);
+    bindNotes(document.getElementById("nlist"), k => { if (k === "refresh") viewChapter(lessonId); });
+    document.getElementById("nf").onsubmit = async e => {
+      e.preventDefault();
+      const ta = document.getElementById("nb"), pg = document.getElementById("np"), btn = document.getElementById("nsave");
+      const body = ta.value.trim(); if (!body) { ta.focus(); return; }
+      btn.disabled = true;
+      try {
+        const n = await q(sb.from("notes").insert({ module_id: book.id, lesson_id: lessonId, page: pg.value.trim() || null, body }).select().single());
+        document.getElementById("nempty")?.remove();
+        document.getElementById("nlist").insertAdjacentHTML("beforeend", noteHTML(n)); icons();
+        ta.value = ""; pg.value = ""; toast("Nota salvata");
+      } catch (err) { toast(errText(err)); }
+      btn.disabled = false;
+    };
     const rb = document.getElementById("read");
     if (rb) rb.onclick = async () => {
       rb.disabled = true;
@@ -859,6 +913,181 @@ async function viewChapter(lessonId) {
     };
   } catch (e) { renderError(e); }
 }
+// ---------- NOTE ----------
+const fmtDate = d => new Date(d).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+function noteHTML(n, ctx) {
+  return `<article class="note" data-note="${n.id}">
+    <div class="note-meta">${ctx ? `<button class="link small" data-goch="${n.lesson_id || ""}">${esc(ctx)}</button>` : ""}
+      ${n.page ? `<span class="pill off">p. ${esc(n.page)}</span>` : ""}<span class="small muted">${fmtDate(n.created_at)}</span></div>
+    <div class="note-body">${esc(n.body)}</div>
+    <div class="note-act"><button class="link small" data-nedit>${ico("pencil")}Modifica</button><button class="link small" data-ndel style="color:var(--bad)">${ico("trash-2")}Elimina</button></div>
+  </article>`;
+}
+function bindNotes(container, onChange) {
+  container.addEventListener("click", async e => {
+    const art = e.target.closest("[data-note]"); if (!art) return;
+    const id = art.dataset.note;
+    const go = e.target.closest("[data-goch]");
+    if (go && go.dataset.goch) return viewChapter(go.dataset.goch);
+    if (e.target.closest("[data-ndel]")) {
+      const b = e.target.closest("[data-ndel]");
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.lastChild.textContent = "Conferma eliminazione"; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.lastChild.textContent = "Elimina"; } }, 4000); return; }
+      try { await q(sb.from("notes").delete().eq("id", id)); art.remove(); toast("Nota eliminata"); onChange && onChange("del", id); }
+      catch (err) { toast(errText(err)); }
+      return;
+    }
+    if (e.target.closest("[data-nedit]")) {
+      const body = art.querySelector(".note-body"); const page = art.querySelector(".pill")?.textContent.replace(/^p\.\s*/, "") || "";
+      const old = body.textContent;
+      art.querySelector(".note-act").hidden = true;
+      body.outerHTML = `<form class="stack note-edit" style="gap:8px"><textarea class="input" rows="4">${esc(old)}</textarea>
+        <div class="row" style="flex-wrap:wrap"><input class="input" style="flex:0 1 150px" placeholder="Pagina" value="${esc(page)}">
+        <button class="btn" style="flex:1 1 100px">Salva</button><button type="button" class="btn ghost" data-ncancel style="flex:1 1 100px">Annulla</button></div></form>`;
+      const f = art.querySelector(".note-edit"); f.querySelector("textarea").focus();
+      f.querySelector("[data-ncancel]").onclick = () => onChange ? onChange("refresh") : viewChapterRefresh(art, old, page);
+      f.onsubmit = async ev => {
+        ev.preventDefault();
+        const nb = f.querySelector("textarea").value.trim(); if (!nb) return;
+        try {
+          const n = await q(sb.from("notes").update({ body: nb, page: f.querySelector("input").value.trim() || null }).eq("id", id).select().single());
+          const ctx = art.querySelector("[data-goch]")?.textContent;
+          art.outerHTML = noteHTML(n, ctx); icons(); toast("Nota aggiornata"); onChange && onChange("upd", n);
+        } catch (err) { toast(errText(err)); }
+      };
+    }
+  });
+}
+function viewChapterRefresh(art, body, page) {
+  art.outerHTML = noteHTML({ id: art.dataset.note, body, page, created_at: Date.now() }); icons();
+}
+
+async function viewNotes(bookId) {
+  S.tab = "books";
+  render(`<div class="spinner"></div>`);
+  try {
+    const [notes, books, lessons] = await Promise.all([
+      q(sb.from("notes").select("*").order("created_at")),
+      q(sb.from("modules").select("id,title,author,order_index").eq("kind", "book").order("order_index")),
+      q(sb.from("lessons").select("id,module_id,title,order_index"))
+    ]);
+    const L = Object.fromEntries(lessons.map(l => [l.id, l]));
+    const B = Object.fromEntries(books.map(b => [b.id, b]));
+    const st = { book: bookId || "", q: "" };
+    const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const filtered = () => notes.filter(n => (!st.book || n.module_id === st.book) &&
+      (!st.q || norm(n.body + " " + (n.page || "")).includes(norm(st.q))))
+      .sort((a, b) => (B[a.module_id]?.order_index ?? 0) - (B[b.module_id]?.order_index ?? 0)
+        || (L[a.lesson_id]?.order_index ?? 999) - (L[b.lesson_id]?.order_index ?? 999)
+        || new Date(a.created_at) - new Date(b.created_at));
+    const capLabel = n => L[n.lesson_id] ? `Cap. ${L[n.lesson_id].order_index} · ${L[n.lesson_id].title}` : "Note generali";
+
+    render(`<div class="stack">
+      <button class="link no-print" id="back" style="align-self:flex-start">${ico("chevron-left")}${bookId && B[bookId] ? esc(B[bookId].title) : "Libri"}</button>
+      <h1 style="font-size:1.6rem">Le mie note</h1>
+      <p class="small muted no-print" style="margin:0">Le note sono private: le vedi solo tu. Puoi aggiungerle dalla pagina di ogni capitolo.</p>
+      <div class="row no-print" style="flex-wrap:wrap">
+        <select class="input" id="nbook" style="flex:1 1 200px" aria-label="Filtra per libro">
+          <option value="">Tutti i libri</option>${books.map(b => `<option value="${b.id}" ${b.id === st.book ? "selected" : ""}>${esc(b.title)}</option>`).join("")}
+        </select>
+        <input class="input" id="nq" type="search" style="flex:1 1 200px" placeholder="Cerca nelle note" aria-label="Cerca nelle note" autocomplete="off">
+      </div>
+      <div class="card stack no-print" style="gap:10px;padding:14px 16px">
+        <div class="label">Esporta <span id="ncount"></span></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <button class="btn ghost" id="exdoc" style="flex:1 1 130px">${ico("file-text")}Word</button>
+          <button class="btn ghost" id="extxt" style="flex:1 1 130px">${ico("file")}Testo</button>
+          <button class="btn ghost" id="excopy" style="flex:1 1 130px">${ico("copy")}Copia</button>
+          <button class="btn ghost" id="exprint" style="flex:1 1 130px">${ico("printer")}Stampa / PDF</button>
+        </div>
+      </div>
+      <div id="nall" class="stack"></div>
+    </div>`);
+
+    const draw = () => {
+      const list = filtered();
+      document.getElementById("ncount").textContent = `· ${list.length} ${list.length === 1 ? "nota" : "note"}`;
+      if (!list.length) {
+        document.getElementById("nall").innerHTML = `<div class="card"><p class="muted" style="margin:0">${notes.length ? "Nessuna nota corrisponde alla ricerca." : "Non hai ancora scritto note. Apri un capitolo di un libro e usa il riquadro «Le mie note»."}</p></div>`;
+        return;
+      }
+      let html = "", curB = null, curL = undefined;
+      for (const n of list) {
+        if (n.module_id !== curB) {
+          if (curB !== null) html += `</div></section>`;
+          curB = n.module_id; curL = undefined;
+          html += `<section class="stack" style="gap:10px"><h2 style="font-size:1.25rem">${esc(B[curB]?.title || "Libro")}<span class="small muted" style="font-family:var(--f-body)"> · ${esc(B[curB]?.author || "")}</span></h2><div class="card notes" style="padding:4px 16px">`;
+        }
+        if (n.lesson_id !== curL) { curL = n.lesson_id; html += `<div class="label notes-cap">${esc(capLabel(n))}</div>`; }
+        html += noteHTML(n, null);
+      }
+      html += `</div></section>`;
+      document.getElementById("nall").innerHTML = html; icons();
+    };
+    draw();
+    bindNotes(document.getElementById("nall"), (kind, x) => {
+      if (kind === "del") { const i = notes.findIndex(n => n.id === x); if (i > -1) notes.splice(i, 1); draw(); }
+      else if (kind === "upd") { const i = notes.findIndex(n => n.id === x.id); if (i > -1) notes[i] = x; }
+      else draw();
+    });
+    document.getElementById("nbook").onchange = e => { st.book = e.target.value; draw(); };
+    document.getElementById("nq").oninput = e => { st.q = e.target.value; draw(); };
+    document.getElementById("back").onclick = () => bookId ? viewBook(bookId) : viewBooks();
+
+    const build = () => {
+      const list = filtered(); const groups = [];
+      for (const n of list) {
+        let g = groups.find(g => g.book === n.module_id); if (!g) groups.push(g = { book: n.module_id, caps: [] });
+        let c = g.caps.find(c => c.id === (n.lesson_id || null)); if (!c) g.caps.push(c = { id: n.lesson_id || null, label: capLabel(n), notes: [] });
+        c.notes.push(n);
+      }
+      return groups;
+    };
+    const today = new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+    const who = S.me?.display_name || "";
+    const asText = () => {
+      let t = `LE MIE NOTE · OM Study\n${who}${who ? " · " : ""}${today}\n`;
+      for (const g of build()) {
+        t += `\n\n${(B[g.book]?.title || "").toUpperCase()}${B[g.book]?.author ? " · " + B[g.book].author : ""}\n${"=".repeat(40)}\n`;
+        for (const c of g.caps) {
+          t += `\n${c.label}\n${"-".repeat(Math.min(c.label.length, 40))}\n`;
+          for (const n of c.notes) t += `${n.page ? "[p. " + n.page + "] " : ""}${n.body}\n\n`;
+        }
+      }
+      return t;
+    };
+    const asHTML = () => {
+      let h = `<h1>Le mie note</h1><p style="color:#666">${esc(who)}${who ? " · " : ""}${esc(today)} · OM Study</p>`;
+      for (const g of build()) {
+        h += `<h2>${esc(B[g.book]?.title || "")}</h2><p style="color:#666">${esc(B[g.book]?.author || "")}</p>`;
+        for (const c of g.caps) {
+          h += `<h3>${esc(c.label)}</h3>`;
+          for (const n of c.notes) h += `<p>${n.page ? `<b>p. ${esc(n.page)}</b> — ` : ""}${esc(n.body).replace(/\n/g, "<br>")}</p>`;
+        }
+      }
+      return h;
+    };
+    const fname = () => "note-" + (st.book && B[st.book] ? B[st.book].title.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") : "om-study");
+    const download = (content, type, ext) => {
+      if (!filtered().length) return toast("Non ci sono note da esportare");
+      const url = URL.createObjectURL(new Blob([content], { type }));
+      const a = document.createElement("a"); a.href = url; a.download = fname() + ext;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast("File scaricato");
+    };
+    document.getElementById("extxt").onclick = () => download("﻿" + asText(), "text/plain;charset=utf-8", ".txt");
+    document.getElementById("exdoc").onclick = () => download(
+      `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Le mie note</title>
+      <style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5}h1{font-size:20pt}h2{font-size:15pt;margin-top:18pt;color:#1f6f64}h3{font-size:12pt;margin-top:12pt}</style></head><body>${asHTML()}</body></html>`,
+      "application/msword", ".doc");
+    document.getElementById("excopy").onclick = async () => {
+      if (!filtered().length) return toast("Non ci sono note da copiare");
+      try { await navigator.clipboard.writeText(asText()); toast("Note copiate negli appunti"); }
+      catch (e) { toast("Copia non riuscita: usa l'esportazione in Testo"); }
+    };
+    document.getElementById("exprint").onclick = () => { if (!filtered().length) return toast("Non ci sono note da stampare"); window.print(); };
+  } catch (e) { renderError(e); }
+}
+
 async function viewGlossary(book) {
   render(`<div class="spinner"></div>`);
   try {
