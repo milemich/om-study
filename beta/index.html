@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16302c">
+<title>OM Study (beta)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<style>
+/* Layout: colonna unica da telefono (max 560px), barra di navigazione in basso, percorso a nodi sinuoso */
+:root{
+  --bg:#eef1ee; --surface:#ffffff; --surface-2:#e3e9e5; --line:#d2dbd6;
+  --ink:#16302c; --ink-2:#4d625d; --ink-3:#7f918c;
+  --accent:#1f6f64; --accent-ink:#ffffff; --accent-soft:#d5ebe6;
+  --gold:#b98317; --gold-soft:#f6ead0; --flame:#d4562a; --flame-soft:#fbe3d9;
+  --ok:#2d8a4e; --ok-soft:#dcf1e3; --bad:#c2413a; --bad-soft:#f8dedc;
+  --shadow:0 1px 2px rgba(22,48,44,.06),0 4px 14px rgba(22,48,44,.06);
+  --f-display:"Marcellus","Cormorant Garamond",Georgia,serif;
+  --f-body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1715; --surface:#18221f; --surface-2:#212d2a; --line:#2c3a36;
+  --ink:#e4ece8; --ink-2:#a9b9b4; --ink-3:#73857f;
+  --accent:#4fb3a2; --accent-ink:#0b1513; --accent-soft:#1d3a35;
+  --gold:#e0b04a; --gold-soft:#3a3020; --flame:#f07a4c; --flame-soft:#3d2219;
+  --ok:#5cc47f; --ok-soft:#1a3324; --bad:#ef6b62; --bad-soft:#3d1f1d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.2;text-wrap:balance;margin:0}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(96px + env(safe-area-inset-bottom,0px))}
+.wrap.full{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;align-items:center;gap:10px}
+.muted{color:var(--ink-2)}
+.small{font-size:.86rem}
+.label{font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:14px 18px;font-weight:800;letter-spacing:.02em;background:var(--accent);color:var(--accent-ink);box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000);transition:transform .08s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn[disabled]{background:var(--surface-2);color:var(--ink-3);box-shadow:none;cursor:not-allowed}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;color:var(--accent);box-shadow:none;border:2px solid var(--line)}
+.btn.ok{background:var(--ok);box-shadow:0 3px 0 color-mix(in srgb,var(--ok) 60%,#000)}
+.btn.bad{background:var(--bad);box-shadow:0 3px 0 color-mix(in srgb,var(--bad) 60%,#000)}
+.link{background:none;border:0;color:var(--accent);font-weight:700;padding:4px 0}
+.icon-btn{background:none;border:0;padding:8px;border-radius:10px;color:var(--ink-2);display:inline-flex}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700;font-size:.9rem}
+.input{width:100%;padding:13px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:1rem}
+.input:focus{border-color:var(--accent);outline:none}
+.msg{padding:12px 14px;border-radius:12px;font-size:.92rem}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--accent-soft);color:var(--ink)}
+svg.i{width:20px;height:20px;flex:none}
+
+/* Login */
+.auth{min-height:100%;display:grid;place-items:center}
+.auth .card{width:100%;padding:28px 22px}
+.brand{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;margin-bottom:8px}
+.brand .mark{width:64px;height:64px}
+.brand h1{font-size:2.1rem;letter-spacing:.02em}
+
+/* Top stats */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);font-weight:800;font-variant-numeric:tabular-nums;font-size:.95rem}
+.chip.flame{color:var(--flame)} .chip.flame.off{color:var(--ink-3)}
+.chip.gold{color:var(--gold)}
+.chip.acc{color:var(--accent)}
+.level{display:flex;align-items:center;gap:14px}
+.level .badge-lv{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font:1.4rem var(--f-display);flex:none}
+.bar{height:12px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:99px;background:var(--gold);transition:width .6s ease}
+.bar.acc > i{background:var(--accent)}
+
+/* Percorso */
+.module-head{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:var(--r);background:var(--accent);color:var(--accent-ink)}
+.module-head h2{font-size:1.35rem}
+.module-head p{margin:4px 0 0;opacity:.85;font-size:.9rem}
+.module-head .tag{font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.2);margin-left:6px}
+.path{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px 0 8px}
+.node-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:180px}
+.node{width:76px;height:76px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 0 color-mix(in srgb,var(--accent) 55%,#000);position:relative}
+.node svg{width:32px;height:32px}
+.node.done{background:var(--gold);box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 55%,#000);color:#fff}
+.node.locked{background:var(--surface-2);color:var(--ink-3);box-shadow:0 6px 0 var(--line);cursor:not-allowed}
+.node.current::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--accent);opacity:.5;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08);opacity:.15}}
+.node-title{font-weight:700;font-size:.85rem;text-align:center;line-height:1.25}
+.node-score{font-size:.75rem;color:var(--ink-3);font-weight:700}
+.start-tip{background:var(--surface);color:var(--accent);font-weight:800;font-size:.75rem;letter-spacing:.06em;padding:5px 10px;border-radius:8px;box-shadow:var(--shadow);text-transform:uppercase}
+
+/* Nav */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10}
+.nav-in{max-width:560px;margin:0 auto;display:flex;justify-content:space-around}
+.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:12px;color:var(--ink-3);font-size:.72rem;font-weight:800;letter-spacing:.03em;position:relative}
+.nav button svg{width:24px;height:24px}
+.nav button.on{color:var(--accent);background:var(--accent-soft)}
+.nav .dot{position:absolute;top:2px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--flame);color:#fff;font-size:.68rem;display:grid;place-items:center}
+
+/* Lezione */
+.lesson-top{display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg);padding-block:calc(10px + env(safe-area-inset-top,0px)) 10px;z-index:5}
+.lesson-top .bar{flex:1}
+.theory{font-size:1.02rem;line-height:1.7}
+.theory p{margin:0 0 14px;white-space:pre-line}
+.theory p:last-child{margin-bottom:0}
+.q-prompt{font-family:var(--f-display);font-size:1.45rem;line-height:1.3}
+.q-type{display:inline-flex;align-items:center;gap:6px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;padding:14px 16px;border-radius:12px;border:2px solid var(--line);border-bottom-width:4px;background:var(--surface);font-weight:600;line-height:1.4;transition:border-color .1s,background .1s}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt[disabled]{cursor:default}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tf .opt{text-align:center;font-size:1.1rem;font-weight:800;padding:22px 10px}
+.blank{display:inline-block;min-width:90px;border-bottom:3px solid var(--accent);margin:0 4px}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.match .col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.match .opt{font-size:.88rem;padding:11px 12px;position:relative;min-height:52px}
+.match .opt .n{position:absolute;top:-8px;right:-6px;width:22px;height:22px;border-radius:50%;color:#fff;font-size:.72rem;font-weight:800;display:grid;place-items:center}
+.feedback{position:fixed;left:0;right:0;bottom:0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));z-index:20;animation:up .2s ease-out}
+.feedback.ok{background:var(--ok-soft)} .feedback.bad{background:var(--bad-soft)}
+.feedback-in{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.feedback h3{font-family:var(--f-body);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.feedback.ok h3{color:var(--ok)} .feedback.bad h3{color:var(--bad)}
+.feedback p{margin:0;font-size:.95rem}
+@keyframes up{from{transform:translateY(100%)}}
+.action-bar{position:fixed;left:0;right:0;bottom:0;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);z-index:6}
+.action-bar > div{max-width:560px;margin:0 auto}
+
+/* Risultato */
+.result{text-align:center;align-items:center}
+.result h1{font-size:2rem}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.stat{border-radius:12px;padding:12px 6px;border:2px solid var(--line);background:var(--surface)}
+.stat b{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.stat.gold b{color:var(--gold)} .stat.acc b{color:var(--accent)} .stat.flame b{color:var(--flame)}
+.new-badge{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:12px;background:var(--gold-soft);width:100%}
+.new-badge .bi{width:44px;height:44px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;flex:none}
+
+/* Flashcard */
+.fc{perspective:1200px;min-height:300px}
+.fc-in{position:relative;width:100%;min-height:300px;transition:transform .45s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d}
+.fc.flip .fc-in{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:12px;box-shadow:var(--shadow)}
+.fc-front{background:var(--surface)}
+.fc-front h2{font-size:1.6rem}
+.fc-back{background:var(--accent);color:var(--accent-ink);transform:rotateY(180deg);font-size:1.08rem;line-height:1.55}
+.rate{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rate button{border:2px solid var(--line);border-bottom-width:4px;background:var(--surface);border-radius:12px;padding:10px 4px;font-weight:800;font-size:.85rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+.rate button small{font-weight:600;color:var(--ink-3);font-size:.72rem}
+.rate .r1{color:var(--bad)} .rate .r3{color:var(--gold)} .rate .r4{color:var(--accent)} .rate .r5{color:var(--ok)}
+
+/* Badge grid */
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bdg{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 6px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+.bdg .bi{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:#fff}
+.bdg .bi svg{width:24px;height:24px}
+.bdg b{font-size:.82rem;line-height:1.2}
+.bdg small{font-size:.7rem;color:var(--ink-3);line-height:1.3}
+.bdg.off{box-shadow:none;background:transparent;border:2px dashed var(--line)}
+.bdg.off .bi{background:var(--surface-2);color:var(--ink-3)}
+
+/* Libri */
+.link{display:inline-flex;align-items:center;gap:4px}
+.cover{--cv:#2b4a78;width:84px;aspect-ratio:2/3;max-width:100%;flex:none;border-radius:4px 8px 8px 4px;padding:10px 8px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;text-align:left;
+  background:linear-gradient(90deg,rgba(0,0,0,.25) 0,rgba(0,0,0,0) 7px),linear-gradient(160deg,color-mix(in srgb,var(--cv) 80%,#fff) 0%,var(--cv) 55%,color-mix(in srgb,var(--cv) 70%,#000) 100%);
+  box-shadow:0 2px 4px rgba(0,0,0,.18),0 8px 18px rgba(0,0,0,.14)}
+.cover-t{font:1rem/1.15 var(--f-display);overflow-wrap:anywhere}
+.cover-a{font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.cover.lg{width:104px}
+.cover.lg .cover-t{font-size:1.15rem}
+.book-card{display:flex;gap:16px;align-items:center;text-align:left;width:100%;border:0;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
+.book-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.book-title{font-family:var(--f-display);font-weight:400;font-size:1.25rem;line-height:1.2}
+.book-head{display:flex;gap:16px;align-items:flex-start}
+.chapters{display:flex;flex-direction:column;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.chap{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;width:100%}
+.chap:last-child{border-bottom:0}
+.chap-n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:800;font-size:.85rem;flex:none;font-variant-numeric:tabular-nums}
+.chap-t{flex:1;min-width:0;font-weight:600;line-height:1.3}
+.chap-s{display:flex;gap:4px;flex:none}
+.tick{color:var(--line);display:inline-flex} .tick.on{color:var(--accent)} .tick.gold{color:var(--gold)}
+.tick svg{width:20px;height:20px}
+.keys{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.keys li{position:relative;padding:10px 14px 10px 36px;background:var(--accent-soft);border-radius:10px;font-weight:600;line-height:1.4}
+.keys li::before{content:"";position:absolute;left:15px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.term{display:flex;flex-direction:column;gap:2px;padding:12px 0;border-bottom:1px solid var(--line)}
+.term:last-child{border-bottom:0}
+.stat b{color:var(--ink)}
+.stat.gold b{color:var(--gold)} .stat.acc b{color:var(--accent)} .stat.flame b{color:var(--flame)}
+
+/* Note */
+.notes{display:flex;flex-direction:column}
+.note{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+.note:last-child{border-bottom:0}
+.note-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.note-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.note-act{display:flex;gap:16px}
+.note-act svg.i{width:16px;height:16px}
+.notes-cap{padding-top:14px;color:var(--accent)}
+textarea.input{resize:vertical;min-height:84px;line-height:1.5}
+select.input{appearance:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media print{
+  :root{--bg:#fff;--surface:#fff;--ink:#000;--ink-2:#333;--line:#ccc;--shadow:none}
+  .nav,.no-print,.note-act,.toast{display:none!important}
+  .wrap{padding:0!important;max-width:none}
+  .card{box-shadow:none;padding:0!important}
+  .note{break-inside:avoid}
+}
+
+/* Segnalazioni */
+.report-link,.report-done{display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)}
+.report-link svg,.report-done svg{width:14px;height:14px}
+.sheet-wrap{position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0 0 env(safe-area-inset-bottom,0px)}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 16px 24px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto;animation:up .2s ease-out}
+.radio{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;line-height:1.4}
+.radio:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.radio input{margin-top:3px;accent-color:var(--accent)}
+
+/* Admin */
+.table-wrap{overflow-x:auto;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:99px}
+.pill.on{background:var(--ok-soft);color:var(--ok)} .pill.off{background:var(--surface-2);color:var(--ink-3)}
+.pill.adm{background:var(--accent-soft);color:var(--accent)}
+.switch{width:46px;height:28px;border-radius:99px;border:0;background:var(--surface-2);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.switch.on{background:var(--ok)} .switch.on::after{left:21px}
+.spinner{width:34px;height:34px;border:4px solid var(--surface-2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:.9rem;z-index:50;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.beta-ribbon{position:fixed;left:50%;top:0;transform:translateX(-50%);background:#f59e0b;color:#1a1200;font-weight:800;font-size:.72rem;letter-spacing:.04em;padding:3px 14px;border-radius:0 0 10px 10px;z-index:60;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+</style>
+</head>
+<body>
+<div id="beta-ribbon" class="beta-ribbon" hidden>VERSIONE BETA</div>
+<div id="app"><div class="spinner" aria-label="Caricamento"></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+<script>
+"use strict";
+const SUPABASE_URL = "https://auuatxzqvwjbwfketgjh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_CgSw4dG6JINDKUijsZ9czQ_3UrU1oAy";
+const APP_URL = location.origin + location.pathname;
+// Flag di build: true solo nella copia servita da /beta/. Non toccare qui — si aggiorna
+// automaticamente quando si pubblica una nuova beta (vedi project-knowledge/STATO_PROGETTO.md).
+const BETA_MODE = true;
+const PROD_URL = location.origin + location.pathname.replace(/\/beta\/?$/, "/");
+
+// Il tipo di link (invito / recupero password) va letto prima che il client ripulisca l'URL
+const initialHash = new URLSearchParams(location.hash.replace(/^#/, ""));
+const linkType = initialHash.get("type");
+const linkError = initialHash.get("error_description");
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+});
+
+const S = { session: null, me: null, stats: null, tab: "path", mustSetPassword: false };
+const $app = document.getElementById("app");
+
+// ---------- utilità ----------
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ico = (name, cls = "i") => `<i data-lucide="${name}" class="${cls}"></i>`;
+const icons = () => { try { lucide.createIcons({ attrs: { "stroke-width": 2.2 } }); } catch (e) {} };
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function render(html, full = false) {
+  $app.innerHTML = `<div class="wrap ${full ? "full" : ""}">${html}</div>` + (full ? "" : navHTML());
+  icons(); window.scrollTo(0, 0);
+}
+let toastT;
+function toast(text) {
+  const t = document.getElementById("toast"); t.textContent = text; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800);
+}
+function errText(e) {
+  const m = (e && (e.message || e.error_description || e.error)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return "Email o password non corretti.";
+  if (/Email not confirmed/i.test(m)) return "Devi prima accettare l'invito ricevuto via email.";
+  if (/Password should be at least/i.test(m)) return "La password deve avere almeno 6 caratteri.";
+  if (/same.*password|different from the old/i.test(m)) return "Scegli una password diversa da quella attuale.";
+  if (/rate limit|too many/i.test(m)) return "Troppi tentativi ravvicinati. Riprova tra qualche minuto.";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "Connessione assente. Controlla la rete e riprova.";
+  return m;
+}
+async function rpc(fn, args) { const { data, error } = await sb.rpc(fn, args); if (error) throw error; return data; }
+async function q(promise) { const { data, error } = await promise; if (error) throw error; return data; }
+
+const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="var(--accent)"/><path d="M32 12c-6 8-6 16 0 20 6-4 6-12 0-20Z" fill="var(--accent-ink)" opacity=".9"/><path d="M14 36c8-2 14 0 18 6-6 3-13 1-18-6Zm36 0c-8-2-14 0-18 6 6 3 13 1 18-6Z" fill="var(--accent-ink)" opacity=".75"/><circle cx="32" cy="48" r="3.5" fill="var(--gold)"/></svg>`;
+
+// ---------- navigazione ----------
+function navHTML() {
+  const due = S.stats?.cards_due || 0;
+  const items = [["path", "map", "Percorso"], ["books", "library", "Libri"], ["cards", "layers", "Ripasso"], ["profile", "user-round", "Profilo"]];
+  if (S.me?.role === "admin") items.push(["admin", "settings-2", "Gestione"]);
+  return `<nav class="nav"><div class="nav-in">${items.map(([k, ic, l]) =>
+    `<button class="${S.tab === k ? "on" : ""}" data-tab="${k}">${ico(ic)}${l}${k === "cards" && due ? `<span class="dot">${due > 99 ? "99+" : due}</span>` : ""}</button>`).join("")}</div></nav>`;
+}
+$app.addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]"); if (b) { go(b.dataset.tab); }
+});
+function go(tab) {
+  S.tab = tab;
+  ({ path: viewPath, books: viewBooks, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
+}
+
+// ---------- autenticazione ----------
+function viewLogin(notice) {
+  $app.innerHTML = `<div class="wrap full auth"><div class="card stack">
+    <div class="brand">${MARK}<h1>OM Study</h1><p class="muted small" style="margin:0">Studio di Biotransenergetica</p></div>
+    ${notice ? `<div class="msg ${notice.type}">${esc(notice.text)}</div>` : ""}
+    <form id="f" class="stack" novalidate>
+      <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" required></div>
+      <div id="err"></div>
+      <button class="btn block" id="go">Entra</button>
+    </form>
+    <button class="link" id="forgot" type="button">Password dimenticata o primo accesso?</button>
+    <p class="muted small" style="margin:0;text-align:center">L'accesso è riservato agli studenti invitati.</p>
+  </div></div>`;
+  const f = document.getElementById("f"), err = document.getElementById("err");
+  f.addEventListener("submit", async e => {
+    e.preventDefault(); err.innerHTML = "";
+    const btn = document.getElementById("go"); btn.disabled = true; btn.textContent = "Accesso…";
+    const { error } = await sb.auth.signInWithPassword({ email: f.em.value.trim(), password: f.pw.value });
+    if (error) { err.innerHTML = `<div class="msg err">${esc(errText(error))}</div>`; btn.disabled = false; btn.textContent = "Entra"; }
+  });
+  document.getElementById("forgot").onclick = viewForgot;
+}
+function viewForgot() {
+  $app.innerHTML = `<div class="wrap full auth"><div class="card stack">
+    <div class="brand">${MARK}<h1 style="font-size:1.6rem">Imposta la password</h1></div>
+    <p class="muted" style="margin:0">Scrivi l'email con cui sei stato invitato. Ti mandiamo un link per scegliere una nuova password.</p>
+    <form id="f" class="stack" novalidate>
+      <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="email" required></div>
+      <div id="err"></div>
+      <button class="btn block" id="go">Invia il link</button>
+    </form>
+    <button class="link" id="back" type="button">Torna all'accesso</button>
+  </div></div>`;
+  const f = document.getElementById("f");
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = document.getElementById("go"); btn.disabled = true;
+    const { error } = await sb.auth.resetPasswordForEmail(f.em.value.trim(), { redirectTo: APP_URL });
+    if (error) { document.getElementById("err").innerHTML = `<div class="msg err">${esc(errText(error))}</div>`; btn.disabled = false; return; }
+    viewLogin({ type: "info", text: "Se l'indirizzo è registrato, riceverai a breve un'email con il link. Controlla anche lo spam." });
+  });
+  document.getElementById("back").onclick = () => viewLogin();
+}
+function viewSetPassword() {
+  const welcome = linkType === "invite";
+  $app.innerHTML = `<div class="wrap full auth"><div class="card stack">
+    <div class="brand">${MARK}<h1 style="font-size:1.6rem">${welcome ? "Benvenuto in OM Study" : "Nuova password"}</h1></div>
+    <p class="muted" style="margin:0">${welcome ? "Scegli il nome con cui vuoi comparire e una password per i prossimi accessi." : "Scegli la nuova password."}</p>
+    <form id="f" class="stack" novalidate>
+      ${welcome ? `<div class="field"><label for="nm">Il tuo nome</label><input class="input" id="nm" autocomplete="name" value="${esc(S.me?.display_name || "")}"></div>` : ""}
+      <div class="field"><label for="pw">Password (almeno 8 caratteri)</label><input class="input" id="pw" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div class="field"><label for="pw2">Ripeti la password</label><input class="input" id="pw2" type="password" autocomplete="new-password" required></div>
+      <div id="err"></div>
+      <button class="btn block" id="go">Salva e inizia</button>
+    </form>
+    ${S.mustSetPassword ? "" : `<button class="link" id="cancel" type="button">Annulla</button>`}
+  </div></div>`;
+  const cancel = document.getElementById("cancel"); if (cancel) cancel.onclick = viewProfile;
+  const f = document.getElementById("f"), err = document.getElementById("err");
+  f.addEventListener("submit", async e => {
+    e.preventDefault(); err.innerHTML = "";
+    const pw = f.pw.value;
+    if (pw.length < 8) { err.innerHTML = `<div class="msg err">La password deve avere almeno 8 caratteri.</div>`; return; }
+    if (pw !== f.pw2.value) { err.innerHTML = `<div class="msg err">Le due password non coincidono.</div>`; return; }
+    const btn = document.getElementById("go"); btn.disabled = true;
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) { err.innerHTML = `<div class="msg err">${esc(errText(error))}</div>`; btn.disabled = false; return; }
+    if (welcome && f.nm && f.nm.value.trim()) {
+      await sb.from("profiles").update({ display_name: f.nm.value.trim() }).eq("id", S.session.user.id);
+    }
+    S.mustSetPassword = false;
+    history.replaceState(null, "", APP_URL);
+    toast("Password salvata");
+    await boot();
+  });
+}
+
+// ---------- dati comuni ----------
+async function loadMe() {
+  const uid = S.session.user.id;
+  const [me, stats] = await Promise.all([
+    q(sb.from("profiles").select("*").eq("id", uid).single()),
+    rpc("get_my_stats")
+  ]);
+  S.me = me; S.stats = stats;
+}
+function statChips() {
+  const s = S.stats || {};
+  return `<div class="chips">
+    <span class="chip flame ${s.active_today ? "" : "off"}" title="Giorni consecutivi">${ico("flame")}${s.current_streak || 0}</span>
+    <span class="chip gold" title="Punti esperienza">${ico("star")}${s.xp || 0}</span>
+    <span class="chip acc" title="Livello">${ico("sprout")}Liv. ${s.level || 1}</span>
+  </div>`;
+}
+
+// ---------- PERCORSO ----------
+async function viewPath() {
+  S.tab = "path";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const [modules, lessons, progress] = await Promise.all([
+      q(sb.from("modules").select("*").eq("kind", "course").order("order_index")),
+      q(sb.from("lessons").select("id,module_id,title,description,order_index,is_published").order("order_index")),
+      q(sb.from("lesson_progress").select("*").eq("user_id", S.session.user.id))
+    ]);
+    const prog = Object.fromEntries(progress.map(p => [p.lesson_id, p]));
+    const isAdmin = S.me.role === "admin";
+    const s = S.stats;
+    const span = Math.max(1, s.xp_next_level - s.xp_current_level);
+    const pct = Math.min(100, Math.round((s.xp - s.xp_current_level) / span * 100));
+    const offsets = [0, 52, 72, 52, 0, -52, -72, -52];
+
+    let html = `<div class="topbar"><h1 style="font-size:1.5rem">Ciao, ${esc(S.me.display_name || "")}</h1></div>
+      ${statChips()}
+      <div class="card stack" style="gap:12px">
+        <div class="level"><div class="badge-lv">${s.level}</div>
+          <div style="flex:1;min-width:0"><div class="row" style="justify-content:space-between"><b>Livello ${s.level}</b><span class="small muted">${s.xp} / ${s.xp_next_level} XP</span></div>
+          <div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div></div></div>
+        ${s.cards_due ? `<button class="btn ghost block" data-tab="cards">${ico("layers")}${s.cards_due} flashcard da ripassare</button>` : ""}
+        ${!s.active_today ? `<p class="small muted" style="margin:0">${s.current_streak ? `Studia oggi per non perdere la serie di ${s.current_streak} giorni.` : "Completa una lezione o ripassa qualche flashcard per iniziare la tua serie."}</p>` : `<p class="small muted" style="margin:0">Oggi hai guadagnato ${s.xp_today} XP. La serie continua.</p>`}
+      </div>`;
+
+    if (!modules.length) html += `<div class="card"><p class="muted" style="margin:0">Nessun modulo disponibile per ora.</p></div>`;
+
+    for (const m of modules) {
+      const ls = lessons.filter(l => l.module_id === m.id);
+      const doneCount = ls.filter(l => prog[l.id]?.times_completed > 0).length;
+      html += `<section><div class="module-head"><div style="flex:1;min-width:0">
+          <div class="label" style="color:inherit;opacity:.75">Modulo ${m.order_index} · ${doneCount}/${ls.length} lezioni</div>
+          <h2>${esc(m.title)}${!m.is_published ? `<span class="tag">BOZZA</span>` : ""}</h2>
+          ${m.description ? `<p>${esc(m.description)}</p>` : ""}</div></div>
+        <div class="path">`;
+      let unlockedNext = true, currentSet = false;
+      ls.forEach((l, i) => {
+        const p = prog[l.id];
+        const done = p?.times_completed > 0;
+        const open = isAdmin || unlockedNext || done;
+        const current = open && !done && !currentSet;
+        if (current) currentSet = true;
+        const cls = done ? "done" : open ? (current ? "current" : "") : "locked";
+        const icon = done ? "check" : open ? "book-open" : "lock";
+        html += `<div class="node-wrap" style="transform:translateX(${offsets[i % offsets.length]}px)">
+          ${current ? `<span class="start-tip">${p ? "Riprova" : "Inizia"}</span>` : ""}
+          <button class="node ${cls}" data-lesson="${l.id}" ${open ? "" : "disabled"} aria-label="${esc(l.title)}">${ico(icon)}</button>
+          <span class="node-title">${esc(l.title)}</span>
+          ${p ? `<span class="node-score">Migliore: ${Math.round(p.best_score)}%</span>` : ""}
+        </div>`;
+        unlockedNext = done;
+      });
+      html += `</div></section>`;
+    }
+    render(`<div class="stack">${html}</div>`);
+    $app.querySelectorAll("[data-lesson]").forEach(b => b.onclick = () => startLesson(b.dataset.lesson, viewPath));
+  } catch (e) { renderError(e); }
+}
+function renderError(e) {
+  render(`<div class="card stack"><div class="msg err">${esc(errText(e))}</div><button class="btn" onclick="go(S.tab)">Riprova</button></div>`);
+}
+
+// ---------- LEZIONE ----------
+const L = {};
+async function startLesson(lessonId, back, skipTheory) {
+  render(`<div class="spinner"></div>`, true);
+  try {
+    const [lesson, questions] = await Promise.all([
+      q(sb.from("lessons").select("*").eq("id", lessonId).single()),
+      q(sb.from("questions").select("id,type,prompt,options,difficulty,order_index").eq("lesson_id", lessonId).order("order_index"))
+    ]);
+    Object.assign(L, { lesson, questions, i: 0, attempt: null, correct: 0, back: back || viewPath, skipTheory });
+    if (skipTheory) { L.attempt = await rpc("start_lesson", { p_lesson_id: lesson.id }); viewQuestion(); }
+    else viewTheory();
+  } catch (e) { renderError(e); }
+}
+function lessonTop(pct) {
+  return `<div class="lesson-top"><button class="icon-btn" id="quit" aria-label="Esci dalla lezione">${ico("x")}</button>
+    <div class="bar acc"><i style="width:${pct}%"></i></div></div>`;
+}
+function bindQuit() {
+  document.getElementById("quit").onclick = () => {
+    if (L.attempt && L.i > 0 && !document.getElementById("quit").dataset.armed) {
+      document.getElementById("quit").dataset.armed = "1"; toast("Tocca di nuovo X per uscire: i progressi di questa lezione andranno persi"); return;
+    }
+    (L.back || viewPath)();
+  };
+}
+function viewTheory() {
+  const paras = (L.lesson.content || "").split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("");
+  $app.innerHTML = `<div class="wrap full" style="padding-top:0;padding-bottom:110px">${lessonTop(0)}
+    <div class="stack">
+      <div><div class="label">Scheda di teoria</div><h1 style="font-size:1.8rem;margin-top:4px">${esc(L.lesson.title)}</h1></div>
+      <div class="card theory">${paras || `<p class="muted">Questa lezione non ha una scheda di teoria.</p>`}</div>
+    </div></div>
+    <div class="action-bar"><div><button class="btn block" id="go">${ico("play")}Inizia gli esercizi · ${L.questions.length} domande</button></div></div>`;
+  icons(); window.scrollTo(0, 0); bindQuit();
+  document.getElementById("go").onclick = async e => {
+    e.currentTarget.disabled = true;
+    try { L.attempt = await rpc("start_lesson", { p_lesson_id: L.lesson.id }); viewQuestion(); }
+    catch (err) { toast(errText(err)); e.currentTarget.disabled = false; }
+  };
+}
+
+const TYPE_LABEL = { multiple_choice: ["list-checks", "Scegli la risposta"], true_false: ["scale", "Vero o falso?"], fill_blank: ["pencil-line", "Completa la frase"], match: ["link-2", "Abbina le coppie"] };
+const PAIR_COLORS = ["#1f6f64", "#b98317", "#d4562a", "#5b5fc7", "#a2427a", "#3b82a0"];
+
+function viewQuestion() {
+  const qq = L.questions[L.i];
+  const pct = Math.round(L.i / L.questions.length * 100);
+  const [tic, tl] = TYPE_LABEL[qq.type];
+  let body = "", prompt = esc(qq.prompt);
+  L.answer = undefined;
+
+  if (qq.type === "multiple_choice") {
+    body = `<div class="opts">${shuffle(qq.options).map(o => `<button class="opt" data-v="${esc(o.id)}">${esc(o.text)}</button>`).join("")}</div>`;
+  } else if (qq.type === "true_false") {
+    body = `<div class="tf"><button class="opt" data-v="true">Vero</button><button class="opt" data-v="false">Falso</button></div>`;
+  } else if (qq.type === "fill_blank") {
+    prompt = prompt.replace(/_{3,}/, `<span class="blank"></span>`);
+    body = `<div class="field"><label for="fb">La tua risposta</label><input class="input" id="fb" autocomplete="off" autocapitalize="off" spellcheck="false"></div>`;
+  } else if (qq.type === "match") {
+    L.left = qq.options.left; L.right = shuffle(qq.options.right); L.pairs = {}; L.pick = null;
+    body = `<div class="match"><div class="col" id="ml"></div><div class="col" id="mr"></div></div>`;
+  }
+
+  $app.innerHTML = `<div class="wrap full" style="padding-top:0;padding-bottom:180px">${lessonTop(pct)}
+    <div class="stack">
+      <div class="row" style="justify-content:space-between"><div class="label q-type">${ico(tic)}${tl} · ${L.i + 1}/${L.questions.length}</div>${reportLink(qq.id)}</div>
+      <h2 class="q-prompt">${prompt}</h2>
+      ${body}
+    </div></div>
+    <div class="action-bar" id="ab"><div><button class="btn block" id="check" disabled>Verifica</button></div></div>`;
+  icons(); window.scrollTo(0, 0); bindQuit();
+  const check = document.getElementById("check");
+
+  if (qq.type === "multiple_choice" || qq.type === "true_false") {
+    $app.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      $app.querySelectorAll(".opt").forEach(x => x.classList.remove("sel")); b.classList.add("sel");
+      L.answer = qq.type === "true_false" ? b.dataset.v === "true" : b.dataset.v; check.disabled = false;
+    });
+  } else if (qq.type === "fill_blank") {
+    const inp = document.getElementById("fb"); inp.focus();
+    inp.oninput = () => { L.answer = inp.value; check.disabled = !inp.value.trim(); };
+    inp.onkeydown = e => { if (e.key === "Enter" && !check.disabled) check.click(); };
+  } else if (qq.type === "match") {
+    drawMatch();
+  }
+  check.onclick = submitAnswer;
+}
+function drawMatch(result) {
+  const colorOf = lid => PAIR_COLORS[L.left.findIndex(l => l.id === lid) % PAIR_COLORS.length];
+  const rightOwner = Object.fromEntries(Object.entries(L.pairs).map(([l, r]) => [r, l]));
+  document.getElementById("ml").innerHTML = L.left.map((l, idx) => {
+    const paired = L.pairs[l.id]; let cls = "";
+    if (result) cls = result.correct_answer[l.id] === paired ? "right" : "wrong";
+    else if (L.pick === l.id) cls = "sel";
+    const c = colorOf(l.id);
+    return `<button class="opt ${cls}" data-l="${l.id}" ${result ? "disabled" : ""} style="${paired && !result ? `border-color:${c}` : ""}">${esc(l.text)}${paired ? `<span class="n" style="background:${c}">${idx + 1}</span>` : ""}</button>`;
+  }).join("");
+  document.getElementById("mr").innerHTML = L.right.map(r => {
+    const owner = rightOwner[r.id]; const c = owner ? colorOf(owner) : "";
+    const n = owner ? L.left.findIndex(l => l.id === owner) + 1 : 0;
+    return `<button class="opt" data-r="${r.id}" ${result ? "disabled" : ""} style="${owner && !result ? `border-color:${c}` : ""}">${esc(r.text)}${owner ? `<span class="n" style="background:${c}">${n}</span>` : ""}</button>`;
+  }).join("");
+  if (result) return;
+  $app.querySelectorAll("[data-l]").forEach(b => b.onclick = () => {
+    const id = b.dataset.l;
+    if (L.pairs[id]) { delete L.pairs[id]; L.pick = id; } else L.pick = L.pick === id ? null : id;
+    afterMatch();
+  });
+  $app.querySelectorAll("[data-r]").forEach(b => b.onclick = () => {
+    const rid = b.dataset.r; const owner = rightOwner[rid];
+    if (owner) { delete L.pairs[owner]; if (!L.pick) L.pick = owner; }
+    if (L.pick) { L.pairs[L.pick] = rid; L.pick = L.left.find(l => !L.pairs[l.id])?.id || null; }
+    afterMatch();
+  });
+}
+function afterMatch() {
+  drawMatch();
+  const all = L.left.every(l => L.pairs[l.id]);
+  L.answer = all ? { ...L.pairs } : undefined;
+  document.getElementById("check").disabled = !all;
+}
+async function submitAnswer() {
+  const qq = L.questions[L.i];
+  const check = document.getElementById("check"); check.disabled = true; check.textContent = "Verifica…";
+  let res;
+  try { res = await rpc("submit_answer", { p_attempt_id: L.attempt, p_question_id: qq.id, p_answer: L.answer }); }
+  catch (e) { toast(errText(e)); check.disabled = false; check.textContent = "Verifica"; return; }
+  if (res.is_correct) L.correct++;
+
+  // evidenzia
+  if (qq.type === "multiple_choice" || qq.type === "true_false") {
+    $app.querySelectorAll(".opt").forEach(b => {
+      const v = qq.type === "true_false" ? b.dataset.v === "true" : b.dataset.v;
+      b.disabled = true; b.classList.remove("sel");
+      if (v === res.correct_answer) b.classList.add("right");
+      else if (v === L.answer) b.classList.add("wrong");
+    });
+  } else if (qq.type === "fill_blank") {
+    document.getElementById("fb").disabled = true;
+  } else if (qq.type === "match") {
+    drawMatch(res);
+  }
+
+  let solution = "";
+  if (!res.is_correct) {
+    if (qq.type === "multiple_choice") solution = qq.options.find(o => o.id === res.correct_answer)?.text;
+    else if (qq.type === "true_false") solution = res.correct_answer ? "Vero" : "Falso";
+    else if (qq.type === "fill_blank") solution = (res.correct_answer || [])[0];
+    else if (qq.type === "match") solution = L.left.map(l => `${l.text} → ${qq.options.right.find(r => r.id === res.correct_answer[l.id])?.text}`).join("\n");
+  }
+  const last = L.i === L.questions.length - 1;
+  const ok = res.is_correct;
+  const praise = ["Esatto!", "Ottimo!", "Perfetto!", "Proprio così!"][Math.floor(Math.random() * 4)];
+  document.getElementById("ab").outerHTML = `<div class="feedback ${ok ? "ok" : "bad"}"><div class="feedback-in">
+    <h3>${ico(ok ? "circle-check" : "circle-x")}${ok ? praise : "Non proprio"}</h3>
+    ${solution ? `<p style="white-space:pre-line"><b>Risposta corretta:</b> ${esc(solution)}</p>` : ""}
+    ${res.explanation ? `<p>${esc(res.explanation)}</p>` : ""}
+    <div class="row" style="justify-content:flex-end">${reportLink(qq.id)}</div>
+    <button class="btn block ${ok ? "ok" : "bad"}" id="next">${last ? "Vedi il risultato" : "Continua"}</button>
+  </div></div>`;
+  icons();
+  const next = document.getElementById("next"); next.focus();
+  next.onclick = () => { if (last) finishLesson(); else { L.i++; viewQuestion(); } };
+}
+async function finishLesson() {
+  render(`<div class="spinner"></div>`, true);
+  let r;
+  try { r = await rpc("finish_lesson", { p_attempt_id: L.attempt }); }
+  catch (e) { return renderError(e); }
+  L.attempt = null;
+  const title = r.score_pct === 100 ? "Lezione perfetta!" : r.passed ? "Lezione superata!" : "Ci sei quasi";
+  const sub = r.passed ? `${esc(L.lesson.title)}` : L.skipTheory
+    ? "Serve almeno il 60% per superare il capitolo. Rileggi la sintesi e riprova."
+    : "Serve almeno il 60% per sbloccare la lezione successiva. Rileggi la scheda e riprova.";
+  render(`<div class="stack result" style="padding-top:24px">
+    <div class="badge-lv" style="width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:${r.passed ? "var(--gold)" : "var(--surface-2)"};color:${r.passed ? "#fff" : "var(--ink-3)"}">${ico(r.passed ? "award" : "rotate-ccw", "i")}</div>
+    <h1>${title}</h1><p class="muted" style="margin:0">${sub}</p>
+    <div class="stats3">
+      <div class="stat gold"><b>+${r.xp_awarded}</b><span>XP</span></div>
+      <div class="stat acc"><b>${r.correct}/${r.total}</b><span>Corrette</span></div>
+      <div class="stat flame"><b>${r.current_streak}</b><span>Giorni di fila</span></div>
+    </div>
+    ${(r.new_badges || []).map(badgeNew).join("")}
+    <div class="stack" style="width:100%;gap:10px">
+      ${r.passed ? "" : `<button class="btn block" id="retry">Riprova la lezione</button>`}
+      <button class="btn ${r.passed ? "" : "ghost"} block" id="back">${L.back === viewPath ? "Torna al percorso" : "Torna al capitolo"}</button>
+    </div></div>`, true);
+  $app.querySelector(".badge-lv svg").style.cssText = "width:40px;height:40px";
+  document.getElementById("back").onclick = () => L.back();
+  const rt = document.getElementById("retry"); if (rt) rt.onclick = () => startLesson(L.lesson.id, L.back, L.skipTheory);
+}
+function badgeNew(b) {
+  return `<div class="new-badge"><div class="bi">${ico(b.icon || "award")}</div><div><div class="label" style="color:var(--gold)">Nuovo badge</div><b>${esc(b.name)}</b><div class="small muted">${esc(b.description)}</div></div></div>`;
+}
+
+// ---------- SEGNALAZIONI ----------
+const REPORT_REASONS = {
+  not_in_summary: "La risposta non si trova nella sintesi / scheda di teoria",
+  wrong_answer: "La risposta indicata come corretta mi sembra sbagliata",
+  unclear: "La domanda o le opzioni sono poco chiare",
+  other: "Altro"
+};
+const reported = new Set();
+function reportLink(qid) {
+  return reported.has(qid)
+    ? `<span class="small muted report-done">${ico("flag")}Segnalata</span>`
+    : `<button type="button" class="link small report-link" data-report="${qid}">${ico("flag")}Segnala</button>`;
+}
+$app.addEventListener("click", e => {
+  const b = e.target.closest("[data-report]"); if (b) openReport(b.dataset.report);
+});
+function openReport(qid) {
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-wrap";
+  wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rpt">
+    <h2 id="rpt" style="font-size:1.3rem">Segnala un problema</h2>
+    <p class="small muted" style="margin:0">La segnalazione arriva all'amministratore, che farà correggere la domanda.</p>
+    <form class="stack" style="gap:10px" novalidate>
+      <fieldset class="stack" style="gap:8px;border:0;padding:0;margin:0">
+        <legend class="sr">Motivo</legend>
+        ${Object.entries(REPORT_REASONS).map(([k, v], i) => `<label class="radio"><input type="radio" name="reason" value="${k}" ${i === 0 ? "checked" : ""}><span>${v}</span></label>`).join("")}
+      </fieldset>
+      <div class="field"><label for="rcm">Dettagli (facoltativo)</label>
+        <textarea class="input" id="rcm" rows="3" maxlength="2000" placeholder="Es. nel libro la risposta è a pag. 54, oppure: secondo me è corretta anche la B"></textarea></div>
+      <div class="row" style="flex-wrap:wrap"><button type="button" class="btn ghost" data-close style="flex:1 1 120px">Annulla</button><button class="btn" style="flex:1 1 120px">${ico("send")}Invia</button></div>
+    </form></div>`;
+  document.body.appendChild(wrap); icons();
+  const close = () => wrap.remove();
+  wrap.addEventListener("click", e => { if (e.target === wrap || e.target.closest("[data-close]")) close(); });
+  document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
+  wrap.querySelector("input").focus();
+  wrap.querySelector("form").onsubmit = async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button:not([data-close])"); btn.disabled = true;
+    try {
+      await q(sb.from("question_reports").insert({ question_id: qid, reason: e.target.reason.value, comment: e.target.querySelector("textarea").value.trim() || null }));
+      reported.add(qid);
+      document.querySelectorAll(`[data-report="${qid}"]`).forEach(x => { x.outerHTML = reportLink(qid); }); icons();
+      close(); toast("Grazie, segnalazione inviata");
+    } catch (err) { toast(errText(err)); btn.disabled = false; }
+  };
+}
+
+// ---------- FLASHCARD ----------
+const F = {};
+async function viewCards(moduleId, moduleTitle) {
+  S.tab = "cards";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const cards = await rpc("get_due_flashcards", { p_module_id: moduleId || null, p_limit: 20 });
+    Object.assign(F, { queue: cards, done: 0, xp: 0, badges: [], total: cards.length, title: moduleTitle || "Ripasso" });
+    if (!cards.length) {
+      render(`<div class="stack"><div class="topbar"><h1 style="font-size:1.5rem">${esc(F.title)}</h1></div>${statChips()}
+        <div class="card stack" style="text-align:center;align-items:center;padding:32px 20px">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center">${ico("check-check")}</div>
+          <h2>Tutto ripassato</h2><p class="muted" style="margin:0">Le flashcard tornano quando è il momento giusto per ricordarle. Le carte sbagliate tornano prima, quelle facili più avanti.</p>
+          <button class="btn" data-tab="path">Vai al percorso</button></div></div>`);
+      return;
+    }
+    showCard();
+  } catch (e) { renderError(e); }
+}
+function showCard() {
+  const c = F.queue[0];
+  if (!c) return cardsDone();
+  const pct = Math.round(F.done / Math.max(F.total, 1) * 100);
+  render(`<div class="stack">
+    <div class="row" style="justify-content:space-between"><h1 style="font-size:1.5rem;min-width:0">${esc(F.title)}</h1><span class="small muted">${F.queue.length} rimaste</span></div>
+    <div class="bar acc"><i style="width:${pct}%"></i></div>
+    ${c.is_new ? `<span class="label" style="color:var(--accent)">Nuova carta</span>` : `<span class="label">Da ripassare</span>`}
+    <div class="fc" id="fc"><div class="fc-in">
+      <div class="fc-face fc-front"><h2>${esc(c.front)}</h2><span class="small muted">Prova a ricordare, poi gira la carta</span></div>
+      <div class="fc-face fc-back"><div>${esc(c.back)}</div></div>
+    </div></div>
+    <div id="ctrl"><button class="btn block" id="flip">${ico("refresh-cw")}Mostra la risposta</button></div>
+  </div>`);
+  const fc = document.getElementById("fc");
+  const flip = () => {
+    fc.classList.add("flip");
+    document.getElementById("ctrl").innerHTML = `<div class="rate">
+      <button class="r1" data-q="1">Di nuovo<small>oggi</small></button>
+      <button class="r3" data-q="3">Difficile<small>${c.is_new ? "1 g" : "presto"}</small></button>
+      <button class="r4" data-q="4">Bene<small>${c.is_new ? "1 g" : "più avanti"}</small></button>
+      <button class="r5" data-q="5">Facile<small>${c.is_new ? "1 g+" : "molto più avanti"}</small></button></div>`;
+    document.querySelectorAll("[data-q]").forEach(b => b.onclick = () => rate(+b.dataset.q, b));
+  };
+  fc.onclick = () => { if (!fc.classList.contains("flip")) flip(); };
+  document.getElementById("flip").onclick = flip;
+}
+async function rate(quality, btn) {
+  document.querySelectorAll("[data-q]").forEach(b => b.disabled = true);
+  const c = F.queue[0];
+  try {
+    const r = await rpc("review_flashcard", { p_flashcard_id: c.id, p_quality: quality });
+    F.xp += r.xp_awarded; F.badges.push(...(r.new_badges || []));
+  } catch (e) { toast(errText(e)); document.querySelectorAll("[data-q]").forEach(b => b.disabled = false); return; }
+  F.queue.shift();
+  if (quality < 3) F.queue.push({ ...c, is_new: false }); else F.done++;
+  showCard();
+}
+async function cardsDone() {
+  await loadMe().catch(() => {});
+  render(`<div class="stack result" style="padding-top:24px">
+    <div style="width:84px;height:84px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center">${ico("sparkles")}</div>
+    <h1>Ripasso completato</h1><p class="muted" style="margin:0">${F.done} carte consolidate. Torneranno al momento giusto.</p>
+    <div class="stats3">
+      <div class="stat gold"><b>+${F.xp}</b><span>XP</span></div>
+      <div class="stat acc"><b>${F.done}</b><span>Carte</span></div>
+      <div class="stat flame"><b>${S.stats?.current_streak || 0}</b><span>Giorni di fila</span></div>
+    </div>
+    ${F.badges.map(badgeNew).join("")}
+    <button class="btn block" data-tab="path">Torna al percorso</button></div>`);
+}
+
+// ---------- LIBRI ----------
+function coverHTML(b, size = "") {
+  return `<div class="cover ${size}" style="--cv:${esc(b.cover_color || "#2b4a78")}">
+    <span class="cover-t">${esc(b.title)}</span><span class="cover-a">${esc(b.author || "")}</span></div>`;
+}
+async function loadBookData(bookId) {
+  const uid = S.session.user.id;
+  const [lessons, progress, reads] = await Promise.all([
+    q(sb.from("lessons").select("id,module_id,title,order_index").order("order_index")),
+    q(sb.from("lesson_progress").select("lesson_id,best_score,times_completed").eq("user_id", uid)),
+    q(sb.from("chapter_reads").select("lesson_id").eq("user_id", uid))
+  ]);
+  return {
+    lessons: bookId ? lessons.filter(l => l.module_id === bookId) : lessons,
+    prog: Object.fromEntries(progress.map(p => [p.lesson_id, p])),
+    read: new Set(reads.map(r => r.lesson_id))
+  };
+}
+async function viewBooks() {
+  S.tab = "books";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const [books, data] = await Promise.all([
+      q(sb.from("modules").select("*").eq("kind", "book").order("order_index")),
+      loadBookData()
+    ]);
+    const cards = books.map(b => {
+      const ls = data.lessons.filter(l => l.module_id === b.id);
+      const read = ls.filter(l => data.read.has(l.id)).length;
+      const passed = ls.filter(l => data.prog[l.id]?.times_completed > 0).length;
+      const pct = ls.length ? Math.round((read + passed) / (ls.length * 2) * 100) : 0;
+      return `<button class="book-card" data-book="${b.id}">
+        ${coverHTML(b)}
+        <div class="book-info"><b class="book-title">${esc(b.title)}</b><span class="small muted">${esc(b.author || "")}${!b.is_published ? " · bozza" : ""}</span>
+        <div class="bar acc" style="margin-top:10px"><i style="width:${pct}%"></i></div>
+        <span class="small muted">${read}/${ls.length} capitoli letti · ${passed}/${ls.length} quiz superati</span></div></button>`;
+    }).join("");
+    render(`<div class="stack"><div class="topbar"><h1 style="font-size:1.5rem">Libri</h1></div>${statChips()}
+      <p class="muted" style="margin:0">Per ogni capitolo trovi una sintesi, i concetti chiave e un quiz. Leggi il capitolo nel libro, prendi le tue note, poi mettiti alla prova.</p>
+      <button class="btn ghost" id="allnotes">${ico("notebook-pen")}Le mie note</button>
+      ${cards || `<div class="card"><p class="muted" style="margin:0">Nessun libro disponibile per ora.</p></div>`}</div>`);
+    $app.querySelectorAll("[data-book]").forEach(b => b.onclick = () => viewBook(b.dataset.book));
+    document.getElementById("allnotes").onclick = () => viewNotes(null);
+  } catch (e) { renderError(e); }
+}
+async function viewBook(bookId) {
+  S.tab = "books";
+  render(`<div class="spinner"></div>`);
+  try {
+    const [book, data] = await Promise.all([q(sb.from("modules").select("*").eq("id", bookId).single()), loadBookData(bookId)]);
+    const ls = data.lessons;
+    const read = ls.filter(l => data.read.has(l.id)).length;
+    const passed = ls.filter(l => data.prog[l.id]?.times_completed > 0).length;
+    const next = ls.find(l => !data.read.has(l.id) || !(data.prog[l.id]?.times_completed > 0));
+    render(`<div class="stack">
+      <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}Libri</button>
+      <div class="book-head">${coverHTML(book, "lg")}
+        <div style="min-width:0"><h1 style="font-size:1.6rem">${esc(book.title)}</h1><div class="muted">${esc(book.author || "")}</div>
+        ${book.description ? `<p class="small muted" style="margin:8px 0 0">${esc(book.description)}</p>` : ""}</div></div>
+      <div class="stats3">
+        <div class="stat acc"><b>${read}/${ls.length}</b><span>Letti</span></div>
+        <div class="stat gold"><b>${passed}/${ls.length}</b><span>Quiz superati</span></div>
+        <div class="stat"><b>${ls.length}</b><span>Capitoli</span></div>
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        ${next ? `<button class="btn" id="cont" style="flex:1 1 200px">${ico("book-open")}${read || passed ? "Continua" : "Inizia"}: cap. ${next.order_index}</button>` : ""}
+        <button class="btn ghost" id="gloss" style="flex:1 1 140px">${ico("book-a")}Glossario</button>
+        <button class="btn ghost" id="fc" style="flex:1 1 140px">${ico("layers")}Flashcard</button>
+        <button class="btn ghost" id="bnotes" style="flex:1 1 140px">${ico("notebook-pen")}Le mie note</button>
+      </div>
+      <div class="chapters">${ls.map(l => {
+        const r = data.read.has(l.id), p = data.prog[l.id];
+        return `<button class="chap" data-ch="${l.id}">
+          <span class="chap-n">${l.order_index}</span>
+          <span class="chap-t">${esc(l.title)}</span>
+          <span class="chap-s">
+            <span class="tick ${r ? "on" : ""}" title="${r ? "Letto" : "Da leggere"}">${ico("book-marked")}</span>
+            <span class="tick ${p?.times_completed > 0 ? "gold" : ""}" title="${p ? "Quiz: " + Math.round(p.best_score) + "%" : "Quiz da fare"}">${ico("circle-check")}</span>
+          </span></button>`;
+      }).join("")}</div>
+    </div>`);
+    document.getElementById("back").onclick = viewBooks;
+    if (next) document.getElementById("cont").onclick = () => viewChapter(next.id);
+    document.getElementById("gloss").onclick = () => viewGlossary(book);
+    document.getElementById("fc").onclick = () => viewCards(book.id, book.title);
+    document.getElementById("bnotes").onclick = () => viewNotes(book.id);
+    $app.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => viewChapter(b.dataset.ch));
+  } catch (e) { renderError(e); }
+}
+async function viewChapter(lessonId) {
+  S.tab = "books";
+  render(`<div class="spinner"></div>`);
+  try {
+    const uid = S.session.user.id;
+    const lesson = await q(sb.from("lessons").select("*").eq("id", lessonId).single());
+    const [book, siblings, terms, prog, readRow, nQ, notes] = await Promise.all([
+      q(sb.from("modules").select("id,title,author,cover_color").eq("id", lesson.module_id).single()),
+      q(sb.from("lessons").select("id,order_index,title").eq("module_id", lesson.module_id).order("order_index")),
+      q(sb.from("glossary_terms").select("term,definition").eq("lesson_id", lessonId).order("term")),
+      q(sb.from("lesson_progress").select("best_score,times_completed").eq("user_id", uid).eq("lesson_id", lessonId).maybeSingle()),
+      q(sb.from("chapter_reads").select("read_at").eq("user_id", uid).eq("lesson_id", lessonId).maybeSingle()),
+      sb.from("questions").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId),
+      q(sb.from("notes").select("*").eq("lesson_id", lessonId).order("created_at"))
+    ]);
+    const idx = siblings.findIndex(s => s.id === lessonId);
+    const prev = siblings[idx - 1], next = siblings[idx + 1];
+    const paras = (lesson.content || "").split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("");
+    const kp = Array.isArray(lesson.key_points) ? lesson.key_points : [];
+    render(`<div class="stack">
+      <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}${esc(book.title)}</button>
+      <div><div class="label">Capitolo ${lesson.order_index} di ${siblings.length}</div><h1 style="font-size:1.8rem;margin-top:4px">${esc(lesson.title)}</h1></div>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <span class="pill ${readRow ? "on" : "off"}">${readRow ? "Letto" : "Da leggere"}</span>
+        <span class="pill ${prog?.times_completed > 0 ? "on" : "off"}">${prog ? "Quiz migliore: " + Math.round(prog.best_score) + "%" : "Quiz da fare"}</span>
+      </div>
+      <section class="stack" style="gap:8px"><div class="label">Sintesi</div><div class="card theory">${paras}</div></section>
+      ${kp.length ? `<section class="stack" style="gap:8px"><div class="label">Concetti chiave</div>
+        <ul class="keys">${kp.map(k => `<li>${esc(k)}</li>`).join("")}</ul></section>` : ""}
+      ${terms.length ? `<section class="stack" style="gap:8px"><div class="label">Termini del capitolo</div>
+        <div class="card" style="padding:4px 16px">${terms.map(t => `<div class="term"><b>${esc(t.term)}</b><span class="small muted">${esc(t.definition)}</span></div>`).join("")}</div></section>` : ""}
+      <div class="stack" style="gap:10px">
+        ${readRow ? "" : `<button class="btn ghost block" id="read">${ico("book-marked")}Ho letto il capitolo nel libro · +15 XP</button>`}
+        <button class="btn block" id="quiz">${ico("play")}${prog ? "Rifai il quiz" : "Fai il quiz"} · ${nQ.count || 0} domande</button>
+      </div>
+      <section class="stack" style="gap:8px">
+        <div class="row" style="justify-content:space-between"><div class="label">Le mie note</div><button class="link small" id="gonotes">Tutte le note del libro</button></div>
+        <div class="card stack" style="gap:12px">
+          <div id="nlist" class="notes">${notes.map(noteHTML).join("") || `<p class="small muted" style="margin:0" id="nempty">Ancora nessuna nota su questo capitolo. Scrivi qui pensieri, citazioni, domande per la lezione.</p>`}</div>
+          <form id="nf" class="stack" style="gap:8px" novalidate>
+            <label class="sr" for="nb">Nuova nota</label>
+            <textarea class="input" id="nb" rows="3" placeholder="Scrivi una nota mentre leggi…"></textarea>
+            <div class="row" style="flex-wrap:wrap">
+              <input class="input" id="np" style="flex:0 1 150px" placeholder="Pagina (facoltativa)" inputmode="text" autocomplete="off">
+              <button class="btn" id="nsave" style="flex:1 1 140px">${ico("plus")}Salva nota</button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <div class="row" style="justify-content:space-between">
+        ${prev ? `<button class="link" id="prev">${ico("chevron-left")}Cap. ${prev.order_index}</button>` : "<span></span>"}
+        ${next ? `<button class="link" id="next">Cap. ${next.order_index}${ico("chevron-right")}</button>` : "<span></span>"}
+      </div>
+    </div>`);
+    document.getElementById("back").onclick = () => viewBook(book.id);
+    if (prev) document.getElementById("prev").onclick = () => viewChapter(prev.id);
+    if (next) document.getElementById("next").onclick = () => viewChapter(next.id);
+    document.getElementById("quiz").onclick = () => startLesson(lessonId, () => viewChapter(lessonId), true);
+    document.getElementById("gonotes").onclick = () => viewNotes(book.id);
+    bindNotes(document.getElementById("nlist"), k => { if (k === "refresh") viewChapter(lessonId); });
+    document.getElementById("nf").onsubmit = async e => {
+      e.preventDefault();
+      const ta = document.getElementById("nb"), pg = document.getElementById("np"), btn = document.getElementById("nsave");
+      const body = ta.value.trim(); if (!body) { ta.focus(); return; }
+      btn.disabled = true;
+      try {
+        const n = await q(sb.from("notes").insert({ module_id: book.id, lesson_id: lessonId, page: pg.value.trim() || null, body }).select().single());
+        document.getElementById("nempty")?.remove();
+        document.getElementById("nlist").insertAdjacentHTML("beforeend", noteHTML(n)); icons();
+        ta.value = ""; pg.value = ""; toast("Nota salvata");
+      } catch (err) { toast(errText(err)); }
+      btn.disabled = false;
+    };
+    const rb = document.getElementById("read");
+    if (rb) rb.onclick = async () => {
+      rb.disabled = true;
+      try {
+        const r = await rpc("mark_chapter_read", { p_lesson_id: lessonId });
+        toast(r.xp_awarded ? `Capitolo segnato come letto · +${r.xp_awarded} XP` : "Capitolo già segnato come letto");
+        (r.new_badges || []).forEach((b, i) => setTimeout(() => toast("Nuovo badge: " + b.name), 3000 * (i + 1)));
+        viewChapter(lessonId);
+      } catch (e) { toast(errText(e)); rb.disabled = false; }
+    };
+  } catch (e) { renderError(e); }
+}
+// ---------- NOTE ----------
+const fmtDate = d => new Date(d).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+function noteHTML(n, ctx) {
+  return `<article class="note" data-note="${n.id}">
+    <div class="note-meta">${ctx ? `<button class="link small" data-goch="${n.lesson_id || ""}">${esc(ctx)}</button>` : ""}
+      ${n.page ? `<span class="pill off">p. ${esc(n.page)}</span>` : ""}<span class="small muted">${fmtDate(n.created_at)}</span></div>
+    <div class="note-body">${esc(n.body)}</div>
+    <div class="note-act"><button class="link small" data-nedit>${ico("pencil")}Modifica</button><button class="link small" data-ndel style="color:var(--bad)">${ico("trash-2")}Elimina</button></div>
+  </article>`;
+}
+function bindNotes(container, onChange) {
+  container.addEventListener("click", async e => {
+    const art = e.target.closest("[data-note]"); if (!art) return;
+    const id = art.dataset.note;
+    const go = e.target.closest("[data-goch]");
+    if (go && go.dataset.goch) return viewChapter(go.dataset.goch);
+    if (e.target.closest("[data-ndel]")) {
+      const b = e.target.closest("[data-ndel]");
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.lastChild.textContent = "Conferma eliminazione"; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.lastChild.textContent = "Elimina"; } }, 4000); return; }
+      try { await q(sb.from("notes").delete().eq("id", id)); art.remove(); toast("Nota eliminata"); onChange && onChange("del", id); }
+      catch (err) { toast(errText(err)); }
+      return;
+    }
+    if (e.target.closest("[data-nedit]")) {
+      const body = art.querySelector(".note-body"); const page = art.querySelector(".pill")?.textContent.replace(/^p\.\s*/, "") || "";
+      const old = body.textContent;
+      art.querySelector(".note-act").hidden = true;
+      body.outerHTML = `<form class="stack note-edit" style="gap:8px"><textarea class="input" rows="4">${esc(old)}</textarea>
+        <div class="row" style="flex-wrap:wrap"><input class="input" style="flex:0 1 150px" placeholder="Pagina" value="${esc(page)}">
+        <button class="btn" style="flex:1 1 100px">Salva</button><button type="button" class="btn ghost" data-ncancel style="flex:1 1 100px">Annulla</button></div></form>`;
+      const f = art.querySelector(".note-edit"); f.querySelector("textarea").focus();
+      f.querySelector("[data-ncancel]").onclick = () => onChange ? onChange("refresh") : viewChapterRefresh(art, old, page);
+      f.onsubmit = async ev => {
+        ev.preventDefault();
+        const nb = f.querySelector("textarea").value.trim(); if (!nb) return;
+        try {
+          const n = await q(sb.from("notes").update({ body: nb, page: f.querySelector("input").value.trim() || null }).eq("id", id).select().single());
+          const ctx = art.querySelector("[data-goch]")?.textContent;
+          art.outerHTML = noteHTML(n, ctx); icons(); toast("Nota aggiornata"); onChange && onChange("upd", n);
+        } catch (err) { toast(errText(err)); }
+      };
+    }
+  });
+}
+function viewChapterRefresh(art, body, page) {
+  art.outerHTML = noteHTML({ id: art.dataset.note, body, page, created_at: Date.now() }); icons();
+}
+
+async function viewNotes(bookId) {
+  S.tab = "books";
+  render(`<div class="spinner"></div>`);
+  try {
+    const [notes, books, lessons] = await Promise.all([
+      q(sb.from("notes").select("*").order("created_at")),
+      q(sb.from("modules").select("id,title,author,order_index").eq("kind", "book").order("order_index")),
+      q(sb.from("lessons").select("id,module_id,title,order_index"))
+    ]);
+    const L = Object.fromEntries(lessons.map(l => [l.id, l]));
+    const B = Object.fromEntries(books.map(b => [b.id, b]));
+    const st = { book: bookId || "", q: "" };
+    const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const filtered = () => notes.filter(n => (!st.book || n.module_id === st.book) &&
+      (!st.q || norm(n.body + " " + (n.page || "")).includes(norm(st.q))))
+      .sort((a, b) => (B[a.module_id]?.order_index ?? 0) - (B[b.module_id]?.order_index ?? 0)
+        || (L[a.lesson_id]?.order_index ?? 999) - (L[b.lesson_id]?.order_index ?? 999)
+        || new Date(a.created_at) - new Date(b.created_at));
+    const capLabel = n => L[n.lesson_id] ? `Cap. ${L[n.lesson_id].order_index} · ${L[n.lesson_id].title}` : "Note generali";
+
+    render(`<div class="stack">
+      <button class="link no-print" id="back" style="align-self:flex-start">${ico("chevron-left")}${bookId && B[bookId] ? esc(B[bookId].title) : "Libri"}</button>
+      <h1 style="font-size:1.6rem">Le mie note</h1>
+      <p class="small muted no-print" style="margin:0">Le note sono private: le vedi solo tu. Puoi aggiungerle dalla pagina di ogni capitolo.</p>
+      <div class="row no-print" style="flex-wrap:wrap">
+        <select class="input" id="nbook" style="flex:1 1 200px" aria-label="Filtra per libro">
+          <option value="">Tutti i libri</option>${books.map(b => `<option value="${b.id}" ${b.id === st.book ? "selected" : ""}>${esc(b.title)}</option>`).join("")}
+        </select>
+        <input class="input" id="nq" type="search" style="flex:1 1 200px" placeholder="Cerca nelle note" aria-label="Cerca nelle note" autocomplete="off">
+      </div>
+      <div class="card stack no-print" style="gap:10px;padding:14px 16px">
+        <div class="label">Esporta <span id="ncount"></span></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <button class="btn ghost" id="exdoc" style="flex:1 1 130px">${ico("file-text")}Word</button>
+          <button class="btn ghost" id="extxt" style="flex:1 1 130px">${ico("file")}Testo</button>
+          <button class="btn ghost" id="excopy" style="flex:1 1 130px">${ico("copy")}Copia</button>
+          <button class="btn ghost" id="exprint" style="flex:1 1 130px">${ico("printer")}Stampa / PDF</button>
+        </div>
+      </div>
+      <div id="nall" class="stack"></div>
+    </div>`);
+
+    const draw = () => {
+      const list = filtered();
+      document.getElementById("ncount").textContent = `· ${list.length} ${list.length === 1 ? "nota" : "note"}`;
+      if (!list.length) {
+        document.getElementById("nall").innerHTML = `<div class="card"><p class="muted" style="margin:0">${notes.length ? "Nessuna nota corrisponde alla ricerca." : "Non hai ancora scritto note. Apri un capitolo di un libro e usa il riquadro «Le mie note»."}</p></div>`;
+        return;
+      }
+      let html = "", curB = null, curL = undefined;
+      for (const n of list) {
+        if (n.module_id !== curB) {
+          if (curB !== null) html += `</div></section>`;
+          curB = n.module_id; curL = undefined;
+          html += `<section class="stack" style="gap:10px"><h2 style="font-size:1.25rem">${esc(B[curB]?.title || "Libro")}<span class="small muted" style="font-family:var(--f-body)"> · ${esc(B[curB]?.author || "")}</span></h2><div class="card notes" style="padding:4px 16px">`;
+        }
+        if (n.lesson_id !== curL) { curL = n.lesson_id; html += `<div class="label notes-cap">${esc(capLabel(n))}</div>`; }
+        html += noteHTML(n, null);
+      }
+      html += `</div></section>`;
+      document.getElementById("nall").innerHTML = html; icons();
+    };
+    draw();
+    bindNotes(document.getElementById("nall"), (kind, x) => {
+      if (kind === "del") { const i = notes.findIndex(n => n.id === x); if (i > -1) notes.splice(i, 1); draw(); }
+      else if (kind === "upd") { const i = notes.findIndex(n => n.id === x.id); if (i > -1) notes[i] = x; }
+      else draw();
+    });
+    document.getElementById("nbook").onchange = e => { st.book = e.target.value; draw(); };
+    document.getElementById("nq").oninput = e => { st.q = e.target.value; draw(); };
+    document.getElementById("back").onclick = () => bookId ? viewBook(bookId) : viewBooks();
+
+    const build = () => {
+      const list = filtered(); const groups = [];
+      for (const n of list) {
+        let g = groups.find(g => g.book === n.module_id); if (!g) groups.push(g = { book: n.module_id, caps: [] });
+        let c = g.caps.find(c => c.id === (n.lesson_id || null)); if (!c) g.caps.push(c = { id: n.lesson_id || null, label: capLabel(n), notes: [] });
+        c.notes.push(n);
+      }
+      return groups;
+    };
+    const today = new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+    const who = S.me?.display_name || "";
+    const asText = () => {
+      let t = `LE MIE NOTE · OM Study\n${who}${who ? " · " : ""}${today}\n`;
+      for (const g of build()) {
+        t += `\n\n${(B[g.book]?.title || "").toUpperCase()}${B[g.book]?.author ? " · " + B[g.book].author : ""}\n${"=".repeat(40)}\n`;
+        for (const c of g.caps) {
+          t += `\n${c.label}\n${"-".repeat(Math.min(c.label.length, 40))}\n`;
+          for (const n of c.notes) t += `${n.page ? "[p. " + n.page + "] " : ""}${n.body}\n\n`;
+        }
+      }
+      return t;
+    };
+    const asHTML = () => {
+      let h = `<h1>Le mie note</h1><p style="color:#666">${esc(who)}${who ? " · " : ""}${esc(today)} · OM Study</p>`;
+      for (const g of build()) {
+        h += `<h2>${esc(B[g.book]?.title || "")}</h2><p style="color:#666">${esc(B[g.book]?.author || "")}</p>`;
+        for (const c of g.caps) {
+          h += `<h3>${esc(c.label)}</h3>`;
+          for (const n of c.notes) h += `<p>${n.page ? `<b>p. ${esc(n.page)}</b> — ` : ""}${esc(n.body).replace(/\n/g, "<br>")}</p>`;
+        }
+      }
+      return h;
+    };
+    const fname = () => "note-" + (st.book && B[st.book] ? B[st.book].title.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") : "om-study");
+    const download = (content, type, ext) => {
+      if (!filtered().length) return toast("Non ci sono note da esportare");
+      const url = URL.createObjectURL(new Blob([content], { type }));
+      const a = document.createElement("a"); a.href = url; a.download = fname() + ext;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast("File scaricato");
+    };
+    document.getElementById("extxt").onclick = () => download("﻿" + asText(), "text/plain;charset=utf-8", ".txt");
+    document.getElementById("exdoc").onclick = () => download(
+      `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Le mie note</title>
+      <style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5}h1{font-size:20pt}h2{font-size:15pt;margin-top:18pt;color:#1f6f64}h3{font-size:12pt;margin-top:12pt}</style></head><body>${asHTML()}</body></html>`,
+      "application/msword", ".doc");
+    document.getElementById("excopy").onclick = async () => {
+      if (!filtered().length) return toast("Non ci sono note da copiare");
+      try { await navigator.clipboard.writeText(asText()); toast("Note copiate negli appunti"); }
+      catch (e) { toast("Copia non riuscita: usa l'esportazione in Testo"); }
+    };
+    document.getElementById("exprint").onclick = () => { if (!filtered().length) return toast("Non ci sono note da stampare"); window.print(); };
+  } catch (e) { renderError(e); }
+}
+
+async function viewGlossary(book) {
+  render(`<div class="spinner"></div>`);
+  try {
+    const [terms, ls] = await Promise.all([
+      q(sb.from("glossary_terms").select("term,definition,lesson_id").eq("module_id", book.id)),
+      q(sb.from("lessons").select("id,order_index").eq("module_id", book.id))
+    ]);
+    const capOf = Object.fromEntries(ls.map(l => [l.id, l.order_index]));
+    const norm = s => s.normalize("NFD").replace(/[̀-ͯ«»"/]/g, "").trim().toLowerCase();
+    terms.sort((a, b) => norm(a.term).localeCompare(norm(b.term), "it"));
+    render(`<div class="stack">
+      <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}${esc(book.title)}</button>
+      <h1 style="font-size:1.6rem">Glossario</h1>
+      <div class="field"><label for="gq" class="small muted">Cerca un termine</label><input class="input" id="gq" type="search" autocomplete="off" placeholder="Es. Thauma, soglia, ironia"></div>
+      <div class="card" style="padding:4px 16px" id="gl"></div>
+    </div>`);
+    const draw = f => {
+      const list = terms.filter(t => !f || norm(t.term + " " + t.definition).includes(norm(f)));
+      document.getElementById("gl").innerHTML = list.length ? list.map(t => `<div class="term">
+        <div class="row" style="justify-content:space-between;align-items:baseline"><b>${esc(t.term)}</b>${t.lesson_id ? `<button class="link small" data-ch="${t.lesson_id}">cap. ${capOf[t.lesson_id]}</button>` : ""}</div>
+        <span class="small muted">${esc(t.definition)}</span></div>`).join("") : `<p class="muted">Nessun termine trovato.</p>`;
+      document.querySelectorAll("#gl [data-ch]").forEach(b => b.onclick = () => viewChapter(b.dataset.ch));
+    };
+    draw("");
+    document.getElementById("gq").oninput = e => draw(e.target.value);
+    document.getElementById("back").onclick = () => viewBook(book.id);
+  } catch (e) { renderError(e); }
+}
+
+// ---------- PROFILO ----------
+async function viewProfile() {
+  S.tab = "profile";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const [badges, mine, prog] = await Promise.all([
+      q(sb.from("badges").select("*").order("threshold")),
+      q(sb.from("user_badges").select("badge_id,earned_at").eq("user_id", S.session.user.id)),
+      q(sb.from("lesson_progress").select("times_completed").eq("user_id", S.session.user.id))
+    ]);
+    const got = new Set(mine.map(b => b.badge_id));
+    const order = ["lessons_completed", "perfect_lessons", "modules_completed", "chapters_read", "books_completed", "streak", "cards_reviewed", "xp"];
+    badges.sort((a, b) => order.indexOf(a.criteria_type) - order.indexOf(b.criteria_type) || a.threshold - b.threshold);
+    const s = S.stats;
+    render(`<div class="stack">
+      <div class="row"><div class="badge-lv" style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font:1.5rem var(--f-display)">${esc((S.me.display_name || "?")[0].toUpperCase())}</div>
+        <div style="min-width:0"><h1 style="font-size:1.5rem">${esc(S.me.display_name || "")}</h1><div class="small muted" style="overflow-wrap:anywhere">${esc(S.session.user.email)}</div></div></div>
+      <div class="stats3">
+        <div class="stat gold"><b>${s.xp}</b><span>XP totali</span></div>
+        <div class="stat flame"><b>${s.longest_streak}</b><span>Serie record</span></div>
+        <div class="stat acc"><b>${prog.filter(p => p.times_completed > 0).length}</b><span>Lezioni</span></div>
+      </div>
+      <div class="row" style="justify-content:space-between"><h2 style="font-size:1.3rem">Badge</h2><span class="small muted">${got.size} di ${badges.length}</span></div>
+      <div class="badges">${badges.map(b => `<div class="bdg ${got.has(b.id) ? "" : "off"}"><div class="bi">${ico(got.has(b.id) ? (b.icon || "award") : "lock")}</div><b>${esc(b.name)}</b><small>${esc(b.description)}</small></div>`).join("")}</div>
+      <div class="card stack">
+        <h2 style="font-size:1.2rem">Impostazioni</h2>
+        <form id="nf" class="stack" novalidate><div class="field"><label for="dn">Nome visualizzato</label><input class="input" id="dn" value="${esc(S.me.display_name || "")}"></div>
+        <button class="btn ghost">Salva il nome</button></form>
+        <button class="btn ghost" id="pwc">${ico("key-round")}Cambia password</button>
+        <button class="btn ghost" id="out" style="color:var(--bad)">${ico("log-out")}Esci</button>
+      </div></div>`);
+    document.getElementById("nf").onsubmit = async e => {
+      e.preventDefault(); const v = document.getElementById("dn").value.trim(); if (!v) return;
+      try { await q(sb.from("profiles").update({ display_name: v }).eq("id", S.session.user.id)); toast("Nome salvato"); viewProfile(); }
+      catch (err) { toast(errText(err)); }
+    };
+    document.getElementById("pwc").onclick = () => viewSetPassword();
+    document.getElementById("out").onclick = async () => { await sb.auth.signOut(); };
+  } catch (e) { renderError(e); }
+}
+
+// ---------- GESTIONE (admin) ----------
+async function viewAdmin() {
+  S.tab = "admin";
+  if (S.me?.role !== "admin") return viewPath();
+  render(`<div class="spinner"></div>`);
+  try {
+    const [people, prog, modules, lessons, reports] = await Promise.all([
+      q(sb.from("profiles").select("*").order("xp", { ascending: false })),
+      q(sb.from("lesson_progress").select("user_id,times_completed")),
+      q(sb.from("modules").select("*").order("order_index")),
+      q(sb.from("lessons").select("id,module_id")),
+      q(sb.from("question_reports").select("id,question_id,reason,comment,created_at,profiles(display_name),questions(prompt,lessons(title,order_index,modules(title)))").eq("status", "open").order("created_at")),
+    ]);
+    const rgroups = [];
+    for (const r of reports) {
+      let g = rgroups.find(g => g.qid === r.question_id);
+      if (!g) rgroups.push(g = { qid: r.question_id, q: r.questions, items: [] });
+      g.items.push(r);
+    }
+    const where = qq => qq?.lessons ? `${qq.lessons.modules?.title || ""} · ${qq.lessons.order_index}. ${qq.lessons.title}` : "";
+    const done = {}; prog.forEach(p => { if (p.times_completed > 0) done[p.user_id] = (done[p.user_id] || 0) + 1; });
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
+    const fmt = d => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—";
+    render(`<div class="stack">
+      <h1 style="font-size:1.5rem">Gestione</h1>
+      <div class="card stack">
+        <h2 style="font-size:1.2rem">Invita uno studente</h2>
+        <p class="small muted" style="margin:0">Riceverà un'email con il link per scegliere la password ed entrare.</p>
+        <form id="inv" class="stack" novalidate>
+          <div class="field"><label for="iem">Email</label><input class="input" id="iem" type="email" required></div>
+          <div class="field"><label for="inm">Nome (facoltativo)</label><input class="input" id="inm"></div>
+          <div id="ierr"></div>
+          <button class="btn" id="ibtn">${ico("send")}Invia l'invito</button>
+        </form>
+      </div>
+      <div class="row" style="justify-content:space-between"><h2 style="font-size:1.2rem">Studenti</h2><span class="small muted">${people.length} account</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Nome</th><th>XP</th><th>Liv.</th><th>Serie</th><th>Lezioni</th><th>Ultimo studio</th><th></th></tr></thead><tbody>
+        ${people.map(p => {
+          const streak = p.last_activity_date && (p.last_activity_date === today || new Date(today) - new Date(p.last_activity_date) <= 864e5) ? p.current_streak : 0;
+          return `<tr><td><b>${esc(p.display_name)}</b>${p.role === "admin" ? ` <span class="pill adm">admin</span>` : ""}<div class="small muted">${esc(p.email || "")}</div></td>
+          <td>${p.xp}</td><td>${Math.floor(Math.sqrt(p.xp / 100)) + 1}</td><td>${streak}</td><td>${done[p.id] || 0}/${lessons.length}</td><td>${fmt(p.last_activity_date)}</td>
+          <td>${p.email ? `<button class="link small" data-reset="${esc(p.email)}">Reinvia accesso</button>` : ""}</td></tr>`;
+        }).join("")}
+      </tbody></table></div>
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap"><h2 style="font-size:1.2rem">Segnalazioni sulle domande</h2>
+        ${rgroups.length ? `<button class="link small" id="rcopy">${ico("copy")}Copia elenco</button>` : ""}</div>
+      ${rgroups.length ? `<div class="stack" style="gap:10px">${rgroups.map(g => `<div class="card stack" style="gap:8px;padding:14px 16px">
+          <div class="small muted">${esc(where(g.q))}</div>
+          <b style="line-height:1.4">${esc(g.q?.prompt || "Domanda eliminata")}</b>
+          ${g.items.map(r => `<div class="small"><span class="pill off">${esc(REPORT_REASONS[r.reason] || r.reason)}</span> <span class="muted">${esc(r.profiles?.display_name || "")} · ${fmtDate(r.created_at)}</span>${r.comment ? `<div style="margin-top:4px;white-space:pre-wrap">«${esc(r.comment)}»</div>` : ""}</div>`).join("")}
+          <div class="row" style="gap:16px"><button class="link small" data-rres="${g.qid}" data-st="resolved">${ico("check")}Segna come corretta</button><button class="link small" data-rres="${g.qid}" data-st="dismissed" style="color:var(--ink-3)">${ico("x")}Archivia</button></div>
+        </div>`).join("")}</div>`
+        : `<div class="card"><p class="small muted" style="margin:0">Nessuna segnalazione aperta.</p></div>`}
+      <h2 style="font-size:1.2rem">Moduli</h2>
+      <div class="stack" style="gap:10px">${modules.map(m => `<div class="card row" style="justify-content:space-between;padding:14px 16px">
+        <div style="min-width:0"><b>${esc(m.title)}</b><div class="small muted">${m.kind === "book" ? "Libro · " + lessons.filter(l => l.module_id === m.id).length + " capitoli" : lessons.filter(l => l.module_id === m.id).length + " lezioni"} ·<span class="pill ${m.is_published ? "on" : "off"}">${m.is_published ? "Visibile agli studenti" : "Bozza"}</span></div></div>
+        <button class="switch ${m.is_published ? "on" : ""}" data-mod="${m.id}" data-pub="${m.is_published}" aria-label="Pubblica o nascondi ${esc(m.title)}"></button></div>`).join("")}</div>
+    </div>`);
+    document.getElementById("inv").onsubmit = async e => {
+      e.preventDefault();
+      const btn = document.getElementById("ibtn"), err = document.getElementById("ierr"); err.innerHTML = ""; btn.disabled = true;
+      const { data, error } = await sb.functions.invoke("invite-user", { body: { email: document.getElementById("iem").value, display_name: document.getElementById("inm").value, redirect_to: APP_URL } });
+      btn.disabled = false;
+      let msg = data?.error;
+      if (error) { try { msg = (await error.context.json()).error; } catch (x) { msg = errText(error); } }
+      if (msg) { err.innerHTML = `<div class="msg err">${esc(msg)}</div>`; return; }
+      toast("Invito inviato"); viewAdmin();
+    };
+    $app.querySelectorAll("[data-reset]").forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await sb.functions.invoke("invite-user", { body: { email: b.dataset.reset, action: "reset", redirect_to: APP_URL } });
+      toast(error ? "Invio non riuscito, riprova" : "Email di accesso inviata a " + b.dataset.reset); b.disabled = false;
+    });
+    $app.querySelectorAll("[data-rres]").forEach(b => b.onclick = async () => {
+      const ids = rgroups.find(g => g.qid === b.dataset.rres).items.map(r => r.id);
+      try { await q(sb.from("question_reports").update({ status: b.dataset.st, resolved_at: new Date().toISOString() }).in("id", ids)); toast(b.dataset.st === "resolved" ? "Segnata come corretta" : "Segnalazione archiviata"); viewAdmin(); }
+      catch (e) { toast(errText(e)); }
+    });
+    const rc = document.getElementById("rcopy");
+    if (rc) rc.onclick = async () => {
+      const txt = "Segnalazioni aperte OM Study\n\n" + rgroups.map((g, i) => `${i + 1}. [${where(g.q)}] ${g.q?.prompt || ""}\n` +
+        g.items.map(r => `   - ${REPORT_REASONS[r.reason] || r.reason}${r.comment ? ": " + r.comment : ""}`).join("\n")).join("\n\n");
+      try { await navigator.clipboard.writeText(txt); toast("Elenco copiato"); } catch (e) { toast("Copia non riuscita"); }
+    };
+    $app.querySelectorAll("[data-mod]").forEach(b => b.onclick = async () => {
+      const pub = b.dataset.pub !== "true";
+      try { await q(sb.from("modules").update({ is_published: pub }).eq("id", b.dataset.mod)); toast(pub ? "Modulo visibile agli studenti" : "Modulo nascosto"); viewAdmin(); }
+      catch (e) { toast(errText(e)); }
+    });
+  } catch (e) { renderError(e); }
+}
+
+// ---------- avvio ----------
+async function boot() {
+  const { data } = await sb.auth.getSession();
+  S.session = data.session;
+  if (!S.session) {
+    const notice = linkError ? { type: "err", text: /expired|invalid/i.test(linkError) ? "Il link è scaduto o è già stato usato. Chiedi un nuovo invito o usa “Password dimenticata”." : linkError } : null;
+    if (linkError) history.replaceState(null, "", APP_URL);
+    return viewLogin(notice);
+  }
+  if (S.mustSetPassword) {
+    try { S.me = await q(sb.from("profiles").select("*").eq("id", S.session.user.id).single()); } catch (e) {}
+    return viewSetPassword();
+  }
+  if (BETA_MODE) {
+    let role = null;
+    try { role = (await q(sb.from("profiles").select("role").eq("id", S.session.user.id).single())).role; } catch (e) {}
+    if (role !== "admin") {
+      await sb.auth.signOut();
+      return render(`<div class="card stack" style="max-width:420px;margin:15vh auto;text-align:center">
+        <h2>Versione di test</h2>
+        <p class="muted">Questa è una versione beta riservata ai test, non è ancora per gli studenti. Usa il sito principale per accedere al corso.</p>
+        <a class="btn primary" href="${esc(PROD_URL)}">Vai al sito principale</a>
+      </div>`, true);
+    }
+  }
+  document.getElementById("beta-ribbon").hidden = !BETA_MODE;
+  go(S.tab || "path");
+}
+let booted = false;
+sb.auth.onAuthStateChange((event, session) => {
+  S.session = session;
+  if (event === "PASSWORD_RECOVERY") S.mustSetPassword = true;
+  if (!booted) return;
+  if (event === "SIGNED_IN" && !S.me) setTimeout(boot, 0);
+  if (event === "SIGNED_OUT") { S.me = null; S.stats = null; S.tab = "path"; viewLogin(); }
+});
+(async () => {
+  if (linkType === "invite" || linkType === "recovery") S.mustSetPassword = true;
+  await boot();
+  booted = true;
+})();
+</script>
+</body>
+</html>

@@ -289,9 +289,11 @@ textarea.input{resize:vertical;min-height:180px;line-height:1.45}
 .kprev .kv{cursor:default;font-size:24px;opacity:1;padding:5px 0}
 .kprev .kn{max-height:48px;opacity:1}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.beta-ribbon{position:fixed;left:50%;top:0;transform:translateX(-50%);background:#f59e0b;color:#1a1200;font-weight:800;font-size:.72rem;letter-spacing:.04em;padding:3px 14px;border-radius:0 0 10px 10px;z-index:60;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 </style>
 </head>
 <body>
+<div id="beta-ribbon" class="beta-ribbon" hidden>VERSIONE BETA</div>
 <div id="app"><div class="spinner" aria-label="Caricamento"></div></div>
 <div id="toast" class="toast" hidden></div>
 
@@ -302,6 +304,10 @@ textarea.input{resize:vertical;min-height:180px;line-height:1.45}
 const SUPABASE_URL = "https://auuatxzqvwjbwfketgjh.supabase.co";
 const SUPABASE_KEY = "sb_publishable_CgSw4dG6JINDKUijsZ9czQ_3UrU1oAy";
 const APP_URL = location.origin + location.pathname;
+// Flag di build: true solo nella copia servita da /beta/. Non toccare qui — si aggiorna
+// automaticamente quando si pubblica una nuova beta (vedi project-knowledge/STATO_PROGETTO.md).
+const BETA_MODE = false;
+const PROD_URL = location.origin + location.pathname.replace(/\/beta\/?$/, "/");
 
 // Il tipo di link (invito / recupero password) va letto prima che il client ripulisca l'URL
 const initialHash = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -1597,6 +1603,19 @@ async function boot() {
     try { S.me = await q(sb.from("profiles").select("*").eq("id", S.session.user.id).single()); } catch (e) {}
     return viewSetPassword();
   }
+  if (BETA_MODE) {
+    let role = null;
+    try { role = (await q(sb.from("profiles").select("role").eq("id", S.session.user.id).single())).role; } catch (e) {}
+    if (role !== "admin") {
+      await sb.auth.signOut();
+      return render(`<div class="card stack" style="max-width:420px;margin:15vh auto;text-align:center">
+        <h2>Versione di test</h2>
+        <p class="muted">Questa è una versione beta riservata ai test, non è ancora per gli studenti. Usa il sito principale per accedere al corso.</p>
+        <a class="btn primary" href="${esc(PROD_URL)}">Vai al sito principale</a>
+      </div>`, true);
+    }
+  }
+  document.getElementById("beta-ribbon").hidden = !BETA_MODE;
   go(S.tab || "path");
 }
 let booted = false;
