@@ -1,6 +1,6 @@
 # OM Study — Stato del progetto
 
-> Ultimo aggiornamento: 2026-10-14
+> Ultimo aggiornamento: 2026-10-14 (aggiunta sezione Music)
 
 ## Cos'è
 Web app gamificata (stile Duolingo/flashcard) per aiutare gli studenti di Biotransenergetica (BTE) a studiare i temi del corso: XP, livelli, streak giornaliere, badge, flashcard a ripetizione dilazionata (SM-2), quiz a correzione automatica, e una sezione "Libri" per studiare testi esterni tramite riassunti originali, quiz, flashcard e glossario.
@@ -26,6 +26,7 @@ Web app gamificata (stile Duolingo/flashcard) per aiutare gli studenti di Biotra
 - `chapter_reads` — tracciamento capitoli letti (per XP e badge "libro completato")
 - `notes` — note personali degli studenti (vedi sotto)
 - `question_reports` — segnalazioni di domande con risposta sbagliata/mancante (vedi sotto)
+- `songs` — canti della sezione Music: `title`, `lyrics` (testo con sintassi colori), `audio_path` (file nel bucket Storage `music`), `is_published`, `order_index`
 
 ### Tracking progressi/gamification
 - `lesson_attempts`, `answer_log`, `lesson_progress`, `flashcard_reviews`, `daily_activity`, `xp_events`
@@ -56,6 +57,11 @@ Gli studenti possono prendere note personali mentre leggono un capitolo di un li
 
 ## Sezione Segnalazioni domande (studenti → admin)
 Gli studenti possono segnalare una domanda del quiz la cui risposta corretta non è presente nel riassunto fornito, con un motivo (enum) + commento libero. L'admin vede le segnalazioni raggruppate per domanda in un pannello di gestione, con azioni "risolvi"/"ignora". Vedi DECISIONI.md per la policy su cosa va corretto.
+
+## Sezione Music
+Tab "Music" nella barra in basso: elenco canzoni, pagina canzone con lettore audio (con loop) e testo colorato su sfondo caldo. Audio nel bucket Storage privato `music` (URL firmati da 1 ora). Lettura per tutti gli utenti loggati, scrittura solo admin (`is_admin()`). L'admin crea/modifica/elimina canzoni dall'app e carica l'audio dal form (anteprima live del testo).
+Sintassi testi: `[rosso]` cambia colore da lì in poi (anche sulle righe seguenti); colori: rosso, arancio, oro, giallo, verde, azzurro, blu, viola, rosa, marrone, grigio, nero, arcobaleno, oppure `[#1a2b3c]`; il testo tra `(parentesi)` diventa più piccolo; riga vuota = spazio.
+Prima canzone inserita: "Oi vamos Saravà" (testo già presente, registrazione da caricare dall'app).
 
 ## Non fatto per ora (scelta esplicita)
 - **Assistente AI integrato in-app** (per fare domande di approfondimento sui contenuti): architettura già scoping (Edge Function + chiave Anthropic separata + cap di spesa/domande), ma rimandato — l'utente preferisce continuare a usare Claude direttamente per ora, senza costi aggiuntivi.
