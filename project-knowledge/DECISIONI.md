@@ -26,6 +26,20 @@
 - Le note personali (`notes`) sono strettamente private per utente (RLS `user_id = auth.uid()` su select/insert/update/delete).
 - Le segnalazioni (`question_reports`): lo studente può inserire solo le proprie (status forzato a `open`), vederle solo le proprie; solo l'admin può aggiornarle/eliminarle (`is_admin()`).
 
+## Ambienti: produzione vs beta (admin) — deciso il 2026-10-14
+Dato che l'app è già in uso da studenti reali, le nuove modifiche vanno sempre testate prima da Michele (admin) senza impattare gli studenti:
+- **Backend condiviso**: un solo progetto Supabase (`OM_Study`), nessun database separato per il test. Scelta fatta consapevolmente per semplicità, anche se l'app è già in uso reale.
+- **Frontend separato**: stesso repo `milemich/om-study`, branch `main`. Due copie dello stesso `index.html`:
+  - `index.html` (root) → **produzione**, quello che usano gli studenti
+  - `beta/index.html` → **beta/test**, stesso codice ma con `const BETA_MODE = true`
+- **Protezione automatica**: nella copia beta, al login chi non ha ruolo `admin` viene disconnesso e rimandato al sito principale (controllo in `boot()`, vedi `STATO_PROGETTO.md`). Così anche se uno studente trova per sbaglio l'URL `/beta/`, non può usarlo.
+- **Banner visivo**: la copia beta mostra un piccolo nastro "VERSIONE BETA" in alto, per non confondersi su quale versione si sta usando.
+- **Workflow per ogni nuova modifica**:
+  1. Si modifica/aggiunge la feature in `beta/index.html`
+  2. Si pusha — solo Michele (da admin) la testa su `.../beta/`
+  3. Se ok, si copia lo stesso contenuto in `index.html` (produzione) e si pusha di nuovo → ora è live per tutti gli studenti
+- **Limite da tenere a mente**: poiché il database è condiviso, un **cambio di schema** (nuove tabelle/colonne/RPC) è comunque immediatamente attivo per tutti, non solo per la beta — la separazione protegge il codice/l'interfaccia, non lo schema. Finché le modifiche di schema sono additive (non rompono nulla di esistente) e il codice in produzione non le richiama, è sicuro; per modifiche di schema più rischiose si può valutare in futuro il branching di Supabase (ambiente DB isolato), per ora scartato per non appesantire il workflow.
+
 ## Assistente AI in-app — deciso di NON farlo per ora
 Michele ha valutato l'idea di integrare Claude come assistente di approfondimento dentro l'app (per rispondere a domande degli studenti su qualsiasi contenuto caricato), ma ha deciso di **non procedere per il momento**: preferisce vedere come funziona l'app senza, dato che può comunque usare Claude direttamente lui stesso senza costi aggiuntivi. Se si deciderà di riconsiderarlo in futuro, l'architettura di base è già definita:
 - Edge Function Supabase con chiave Anthropic propria (`ANTHROPIC_API_KEY` nei secrets, mai lato client)

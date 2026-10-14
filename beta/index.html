@@ -32,6 +32,7 @@
   color-scheme:dark;
 }}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input{font:inherit;color:inherit}
@@ -104,7 +105,7 @@ svg.i{width:20px;height:20px;flex:none}
 /* Nav */
 .nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10}
 .nav-in{max-width:560px;margin:0 auto;display:flex;justify-content:space-around}
-.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:12px;color:var(--ink-3);font-size:.72rem;font-weight:800;letter-spacing:.03em;position:relative}
+.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 7px;border-radius:12px;color:var(--ink-3);font-size:.72rem;font-weight:800;letter-spacing:.03em;position:relative}
 .nav button svg{width:24px;height:24px}
 .nav button.on{color:var(--accent);background:var(--accent-soft)}
 .nav .dot{position:absolute;top:2px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--flame);color:#fff;font-size:.68rem;display:grid;place-items:center}
@@ -247,6 +248,46 @@ tr:last-child td{border-bottom:0}
 .spinner{width:34px;height:34px;border:4px solid var(--surface-2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:.9rem;z-index:50;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+/* Music */
+.song-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:0;border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
+.song-ic{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.song-ic svg{width:22px;height:22px}
+.song-t{font-weight:800;line-height:1.3}
+textarea.input{resize:vertical;min-height:180px;line-height:1.45}
+.check{display:flex;gap:10px;align-items:center;font-weight:700}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.hint{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:.84rem;line-height:1.5}
+.hint code{background:var(--surface);padding:1px 6px;border-radius:6px;font-size:.92em}
+/* Karaoke */
+.kara{position:fixed;inset:0;z-index:20;background:#0f1715;color:#e4ece8;display:flex;flex-direction:column}
+.kara-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0}
+.kara-top .link{color:#4fb3a2;display:inline-flex;align-items:center}
+.kara-top .icon-btn{color:#a9b9b4}
+.kara h1{font-size:1.5rem;text-align:center;padding:4px 16px 0;color:#e4ece8}
+.kara-lines{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;text-align:center}
+.kara-in{margin:auto 0;display:flex;flex-direction:column;gap:4px;padding:16px 0}
+.kv{background:none;border:0;color:inherit;font:inherit;width:100%;padding:8px 0;cursor:pointer;font-family:var(--f-display);line-height:1.12;font-size:26px;opacity:.9;transition:font-size .25s,opacity .25s}
+.kv[data-s=near]{font-size:22px;opacity:.55}
+.kv[data-s=far]{font-size:21px;opacity:.32}
+.kv[data-s=on]{font-size:32px;opacity:1}
+.kv[data-s=on] .c{text-shadow:0 0 22px currentColor}
+.kv .ly-s{font-family:var(--f-body);font-size:.5em;font-weight:800;letter-spacing:.03em}
+.kn{display:block;font-family:var(--f-body);font-size:13px;font-weight:800;letter-spacing:.04em;max-height:0;opacity:0;overflow:hidden;transition:max-height .25s,opacity .25s}
+.kv[data-s=on] .kn,.kv[data-s=idle] .kn{max-height:48px;opacity:1}
+.kv[data-s=idle] .kn{opacity:.8}
+.kara-bar{background:#18221f;border-top:1px solid #2c3a36;padding:14px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px}
+.kara-bar .play{width:52px;height:52px;border-radius:50%;border:0;background:#4fb3a2;color:#0b1513;display:grid;place-items:center;flex:none}
+.kara-bar .play svg{width:22px;height:22px}
+.kara-bar .loop{background:none;border:0;color:#73857f;padding:8px;border-radius:10px;display:inline-flex}
+.kara-bar .loop.on{color:#4fb3a2;background:#1d3a35}
+.kara-seek{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kara-seek input{width:100%;accent-color:#4fb3a2;margin:0}
+.kara-seek div{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#a9b9b4;font-variant-numeric:tabular-nums}
+.kara-msg{margin:0 16px 8px;text-align:center;font-size:.85rem;color:#a9b9b4}
+.kprev{background:#0f1715;color:#e4ece8;border-radius:var(--r);padding:14px 10px;text-align:center}
+.kprev .kv{cursor:default;font-size:24px;opacity:1;padding:5px 0}
+.kprev .kn{max-height:48px;opacity:1}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 .beta-ribbon{position:fixed;left:50%;top:0;transform:translateX(-50%);background:#f59e0b;color:#1a1200;font-weight:800;font-size:.72rem;letter-spacing:.04em;padding:3px 14px;border-radius:0 0 10px 10px;z-index:60;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 </style>
@@ -312,7 +353,7 @@ const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle c
 // ---------- navigazione ----------
 function navHTML() {
   const due = S.stats?.cards_due || 0;
-  const items = [["path", "map", "Percorso"], ["books", "library", "Libri"], ["cards", "layers", "Ripasso"], ["profile", "user-round", "Profilo"]];
+  const items = [["path", "map", "Percorso"], ["books", "library", "Libri"], ["music", "music", "Music"], ["cards", "layers", "Ripasso"], ["profile", "user-round", "Profilo"]];
   if (S.me?.role === "admin") items.push(["admin", "settings-2", "Gestione"]);
   return `<nav class="nav"><div class="nav-in">${items.map(([k, ic, l]) =>
     `<button class="${S.tab === k ? "on" : ""}" data-tab="${k}">${ico(ic)}${l}${k === "cards" && due ? `<span class="dot">${due > 99 ? "99+" : due}</span>` : ""}</button>`).join("")}</div></nav>`;
@@ -322,7 +363,7 @@ $app.addEventListener("click", e => {
 });
 function go(tab) {
   S.tab = tab;
-  ({ path: viewPath, books: viewBooks, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
+  ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
 }
 
 // ---------- autenticazione ----------
@@ -1316,6 +1357,240 @@ async function viewAdmin() {
 }
 
 // ---------- avvio ----------
+// ---------- MUSIC ----------
+const KCOL = { rosso: "#ff5d5d", arancio: "#ff8a3d", oro: "#f0b429", giallo: "#f5e050", verde: "#4fcf7a", azzurro: "#4cc3ff", blu: "#7f93ff", viola: "#c58bff", rosa: "#ff7ab8", marrone: "#d39a5e", grigio: "#bdbdbd", nero: "#e4ece8" };
+const RAINBOW = ["#ff5d5d", "#ff8a3d", "#f5e050", "#4fcf7a", "#7f93ff", "#c58bff"];
+// Sintassi testi: una riga = un verso. [colore] cambia colore da lì in poi; (testo) = nota piccola;
+// una riga che inizia con "(" è la nota del verso sopra; @1:35.2 (o @0:12,1:05 per più ripetizioni) = tempo/i in cui il verso inizia.
+const parseT = x => { x = x.trim(); const m = x.match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/); return m ? (+(m[1] || 0)) * 60 + parseFloat(m[2]) : NaN; };
+const fmtT = t => { const m = Math.floor(t / 60), sec = t - m * 60; return `${m}:${sec < 10 ? "0" : ""}${sec.toFixed(1)}`; };
+const fmtClock = t => { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+const LY_TIME = /^@([0-9:.,\s]+?)(?:\s+|$)/;
+const stripLine = l => l.trim().replace(LY_TIME, "").replace(/\[[^\]]+\]/g, "").trim();
+const isNoteLine = l => stripLine(l).startsWith("(");
+function parseLyrics(text) {
+  let cur = "#e4ece8", ri = 0;
+  const verses = [];
+  const paint = t => {
+    if (cur === "rainbow") return [...t].map(ch => /\s/.test(ch) ? ch : `<span class="c" style="color:${RAINBOW[ri++ % RAINBOW.length]}">${esc(ch)}</span>`).join("");
+    return `<span class="c" style="color:${cur}">${esc(t)}</span>`;
+  };
+  for (const raw of String(text || "").split("\n")) {
+    let line = raw.trim(); if (!line) continue;
+    let times = [];
+    const tm = line.match(LY_TIME);
+    if (tm) { times = tm[1].split(",").map(parseT).filter(Number.isFinite); line = line.slice(tm[0].length); }
+    ri = 0; let html = "";
+    for (const part of line.split(/(\[[^\]]+\])/)) {
+      if (!part) continue;
+      const m = part.match(/^\[([^\]]+)\]$/);
+      if (m) { const k = m[1].trim().toLowerCase(); cur = k === "arcobaleno" ? "rainbow" : /^#[0-9a-f]{3,8}$/.test(k) ? k : (KCOL[k] || cur); continue; }
+      html += part.split(/(\([^)]*\))/).filter(Boolean).map(t => /^\(.*\)$/.test(t) ? `<span class="ly-s">${paint(t)}</span>` : paint(t)).join("");
+    }
+    if (!html) continue;
+    if (stripLine(raw).startsWith("(") && verses.length) { verses[verses.length - 1].note += (verses[verses.length - 1].note ? " " : "") + html; continue; }
+    verses.push({ times, html, note: "" });
+  }
+  return verses;
+}
+const versesHTML = vs => vs.map((v, i) => `<button class="kv" data-i="${i}" data-s="idle">${v.html}${v.note ? `<span class="kn">${v.note}</span>` : ""}</button>`).join("");
+
+let kAudio = null, kRaf = 0;
+function stopAudio() { cancelAnimationFrame(kRaf); if (kAudio) { try { kAudio.pause(); } catch (e) {} kAudio = null; } }
+
+async function viewMusic() {
+  stopAudio();
+  S.tab = "music";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const admin = S.me?.role === "admin";
+    const songs = await q(sb.from("songs").select("id,title,audio_path,is_published").order("order_index").order("created_at"));
+    render(`<div class="stack"><div class="topbar"><h1 style="font-size:1.5rem">Music</h1></div>${statChips()}
+      <p class="muted" style="margin:0">I canti del corso: ascolta la registrazione e segui il testo.</p>
+      ${admin ? `<button class="btn ghost" id="newsong">${ico("plus")}Nuova canzone</button>` : ""}
+      ${songs.map(x => `<button class="song-row" data-song="${x.id}"><span class="song-ic">${ico("music")}</span>
+        <span style="min-width:0;flex:1"><span class="song-t">${esc(x.title)}</span>${admin && (!x.audio_path || !x.is_published) ? `<div class="small muted">${[!x.audio_path ? "audio mancante" : "", !x.is_published ? "bozza" : ""].filter(Boolean).join(" · ")}</div>` : ""}</span>
+        ${ico("chevron-right")}</button>`).join("") || `<div class="card"><p class="muted" style="margin:0">Nessuna canzone disponibile per ora.</p></div>`}
+    </div>`);
+    $app.querySelectorAll("[data-song]").forEach(b => b.onclick = () => viewSong(b.dataset.song));
+    if (admin) document.getElementById("newsong").onclick = () => editSong(null);
+  } catch (e) { renderError(e); }
+}
+async function viewSong(id) {
+  stopAudio();
+  S.tab = "music";
+  render(`<div class="spinner"></div>`);
+  try {
+    const song = await q(sb.from("songs").select("*").eq("id", id).single());
+    let url = null;
+    if (song.audio_path) { const { data } = await sb.storage.from("music").createSignedUrl(song.audio_path, 3600); url = data?.signedUrl || null; }
+    const admin = S.me?.role === "admin";
+    const verses = parseLyrics(song.lyrics);
+    const timeline = verses.flatMap((v, i) => v.times.map(t => ({ t, i }))).sort((a, b) => a.t - b.t);
+    const PLAY = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>`;
+    const PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
+    render(`<div class="kara">
+      <div class="kara-top"><button class="link" id="back">${ico("chevron-left")}Music</button>
+        ${admin ? `<button class="icon-btn" id="edit" aria-label="Modifica">${ico("pencil")}</button>` : ""}</div>
+      <h1>${esc(song.title)}</h1>
+      <div class="kara-lines"><div class="kara-in">${verses.length ? versesHTML(verses) : `<p class="kara-msg">Il testo non è ancora stato aggiunto.</p>`}</div></div>
+      ${url ? `<div class="kara-bar"><audio id="au" preload="metadata" src="${esc(url)}"></audio>
+        <button class="play" id="pp" aria-label="Riproduci">${PLAY}</button>
+        <div class="kara-seek"><input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posizione"><div><span id="tc">0:00</span><span id="td">0:00</span></div></div>
+        <button class="loop" id="loop" aria-label="Ripeti in loop" aria-pressed="false">${ico("repeat")}</button></div>`
+        : `<p class="kara-msg" style="padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))">${song.audio_path ? "Non riesco a caricare la registrazione. Riprova tra poco." : "La registrazione non è ancora stata caricata."}</p>`}
+    </div>`, true);
+    document.getElementById("back").onclick = () => { stopAudio(); viewMusic(); };
+    if (admin) document.getElementById("edit").onclick = () => { stopAudio(); editSong(song); };
+    const els = [...document.querySelectorAll(".kv")];
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let active = -1;
+    const setActive = i => {
+      if (i === active) return; active = i;
+      els.forEach((el, j) => { el.dataset.s = i < 0 ? "idle" : j === i ? "on" : Math.abs(j - i) === 1 ? "near" : "far"; });
+      if (i >= 0) els[i].scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    };
+    const au = document.getElementById("au");
+    if (!au) { els.forEach((el, i) => el.onclick = () => setActive(i)); return; }
+    kAudio = au;
+    const pp = document.getElementById("pp"), seek = document.getElementById("seek"), tc = document.getElementById("tc"), td = document.getElementById("td");
+    const sync = () => {
+      const d = au.duration || 0;
+      if (!seek.dataset.drag) seek.value = d ? Math.round(au.currentTime / d * 1000) : 0;
+      tc.textContent = fmtClock(au.currentTime); td.textContent = fmtClock(d);
+    };
+    const tick = () => {
+      if (timeline.length) { let idx = -1; for (const e of timeline) { if (e.t <= au.currentTime + 0.05) idx = e.i; else break; } setActive(idx); }
+      sync();
+      if (!au.paused) kRaf = requestAnimationFrame(tick);
+    };
+    au.addEventListener("play", () => { pp.innerHTML = PAUSE; pp.setAttribute("aria-label", "Pausa"); cancelAnimationFrame(kRaf); kRaf = requestAnimationFrame(tick); });
+    au.addEventListener("pause", () => { pp.innerHTML = PLAY; pp.setAttribute("aria-label", "Riproduci"); });
+    ["loadedmetadata", "durationchange", "seeked", "timeupdate"].forEach(ev => au.addEventListener(ev, () => { if (au.paused) tick(); }));
+    pp.onclick = () => { au.paused ? au.play().catch(() => toast("Impossibile avviare l'audio")) : au.pause(); };
+    seek.oninput = () => { seek.dataset.drag = "1"; if (au.duration) au.currentTime = seek.value / 1000 * au.duration; };
+    seek.onchange = () => { delete seek.dataset.drag; };
+    const loop = document.getElementById("loop");
+    loop.onclick = () => { au.loop = !au.loop; loop.classList.toggle("on", au.loop); loop.setAttribute("aria-pressed", au.loop); };
+    els.forEach((el, i) => el.onclick = () => {
+      const t = verses[i].times[0];
+      if (t !== undefined) { au.currentTime = t; au.play().catch(() => {}); } else setActive(i);
+    });
+  } catch (e) { renderError(e); }
+}
+async function editSong(song) {
+  const isNew = !song;
+  let audioSrc = null;
+  if (song?.audio_path) { try { const { data } = await sb.storage.from("music").createSignedUrl(song.audio_path, 3600); audioSrc = data?.signedUrl || null; } catch (e) {} }
+  render(`<div class="stack">
+    <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}Indietro</button>
+    <h1 style="font-size:1.5rem">${isNew ? "Nuova canzone" : "Modifica canzone"}</h1>
+    <form id="sf" class="stack" novalidate>
+      <div class="field"><label for="st">Titolo</label><input class="input" id="st" value="${esc(song?.title || "")}" required></div>
+      <div class="field"><label for="sa">Registrazione audio</label>
+        <input class="input" id="sa" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg">
+        ${song?.audio_path ? `<span class="small muted">Già caricata. Scegli un file solo per sostituirla.</span>` : ""}</div>
+      <div class="field"><label for="sl">Testo</label><textarea class="input" id="sl" rows="10" spellcheck="false">${esc(song?.lyrics || "")}</textarea></div>
+      <div class="hint">Ogni riga è un verso. Colore: <code>[rosso]</code> prima del testo, vale fino al cambio (anche sulle righe dopo).
+        Colori: rosso, arancio, oro, giallo, verde, azzurro, blu, viola, rosa, marrone, grigio, nero, arcobaleno, oppure <code>[#1a2b3c]</code>.
+        Il testo tra <code>(parentesi)</code> diventa più piccolo; una riga che inizia con <code>(</code> è la nota del verso sopra.
+        I tempi (<code>@1:35.2</code>) li inserisce lo strumento qui sotto.</div>
+      <div class="card stack" id="syncbox" ${audioSrc ? "" : "hidden"}>
+        <div class="label">Tempi del karaoke</div>
+        <audio id="sau" controls preload="metadata" style="width:100%" ${audioSrc ? `src="${esc(audioSrc)}"` : ""}></audio>
+        <button type="button" class="btn" id="tap">${ico("timer")}<span id="taplbl"></span></button>
+        <div class="row" style="justify-content:space-between"><button type="button" class="link" id="undo">Annulla l'ultimo</button><button type="button" class="link" id="clr" style="color:var(--bad)">Azzera tutti i tempi</button></div>
+        <p class="small muted" style="margin:0">Fai partire la registrazione e tocca il pulsante nel momento in cui inizia ogni verso. Dopo l'ultimo si riparte dal primo (per le ripetizioni). Poi salva.</p>
+      </div>
+      <div class="label">Anteprima</div>
+      <div class="kprev" id="prev"></div>
+      <label class="check"><input type="checkbox" id="sp" ${song?.is_published === false ? "" : "checked"}>Visibile agli studenti</label>
+      <div id="serr"></div>
+      <button class="btn" id="sbtn">${ico("save")}Salva</button>
+      ${isNew ? "" : `<button type="button" class="btn ghost" id="sdel" style="color:var(--bad)">${ico("trash-2")}Elimina canzone</button>`}
+    </form></div>`);
+  const back = () => song ? viewSong(song.id) : viewMusic();
+  document.getElementById("back").onclick = back;
+  const ta = document.getElementById("sl"), sau = document.getElementById("sau"), box = document.getElementById("syncbox");
+  // anteprima
+  const prev = () => { const vs = parseLyrics(ta.value); document.getElementById("prev").innerHTML = vs.length ? versesHTML(vs) : `<p class="kara-msg">Il testo apparirà qui.</p>`; };
+  // strumento tempi
+  let stack = [];
+  const vLines = () => { const ls = ta.value.split("\n"); return { ls, idx: ls.map((l, i) => (l.trim() && !isNoteLine(l)) ? i : -1).filter(i => i >= 0) }; };
+  const getTimes = l => { const m = l.trim().match(LY_TIME); return m ? m[1].split(",").map(parseT).filter(Number.isFinite) : []; };
+  const setTimes = (l, ts) => (ts.length ? "@" + ts.map(fmtT).join(",") + " " : "") + l.trim().replace(LY_TIME, "");
+  const total = () => vLines().idx.reduce((n, i) => n + getTimes(vLines().ls[i]).length, 0);
+  let n = total();
+  const tapLabel = () => {
+    const { ls, idx } = vLines(); const lbl = document.getElementById("taplbl");
+    if (!idx.length) { lbl.textContent = "Scrivi prima il testo"; return; }
+    const t = stripLine(ls[idx[n % idx.length]]).replace(/\s*\([^)]*\)/g, "").trim();
+    lbl.textContent = `Ora inizia: ${t.length > 28 ? t.slice(0, 27) + "…" : t}`;
+  };
+  document.getElementById("tap").onclick = () => {
+    const { ls, idx } = vLines(); if (!idx.length) return;
+    const k = idx[n % idx.length];
+    ls[k] = setTimes(ls[k], [...getTimes(ls[k]), sau.currentTime]);
+    ta.value = ls.join("\n"); stack.push(k); n++; tapLabel(); prev();
+  };
+  document.getElementById("undo").onclick = () => {
+    const k = stack.pop(); if (k === undefined) { toast("Niente da annullare"); return; }
+    const ls = ta.value.split("\n"); const ts = getTimes(ls[k]); ts.pop(); ls[k] = setTimes(ls[k], ts);
+    ta.value = ls.join("\n"); n = Math.max(0, n - 1); tapLabel(); prev();
+  };
+  document.getElementById("clr").onclick = () => {
+    ta.value = ta.value.split("\n").map(l => l.trim().replace(LY_TIME, "")).join("\n"); stack = []; n = 0; tapLabel(); prev(); toast("Tempi azzerati");
+  };
+  ta.oninput = () => { n = total(); tapLabel(); prev(); };
+  tapLabel(); prev();
+  let objUrl = null;
+  document.getElementById("sa").onchange = e => {
+    const f = e.target.files[0]; if (objUrl) URL.revokeObjectURL(objUrl);
+    if (f) { objUrl = URL.createObjectURL(f); sau.src = objUrl; box.hidden = false; }
+  };
+  let armed = false;
+  const del = document.getElementById("sdel");
+  if (del) del.onclick = async () => {
+    if (!armed) { armed = true; del.lastChild.textContent = "Tocca ancora per eliminare"; return; }
+    try {
+      if (song.audio_path) await sb.storage.from("music").remove([song.audio_path]);
+      await q(sb.from("songs").delete().eq("id", song.id));
+      toast("Canzone eliminata"); viewMusic();
+    } catch (e) { toast(errText(e)); }
+  };
+  document.getElementById("sf").onsubmit = async ev => {
+    ev.preventDefault();
+    const title = document.getElementById("st").value.trim();
+    const file = document.getElementById("sa").files[0];
+    const btn = document.getElementById("sbtn"), err = document.getElementById("serr");
+    err.innerHTML = "";
+    if (!title) { err.innerHTML = `<div class="msg err">Inserisci il titolo.</div>`; return; }
+    btn.disabled = true; btn.lastChild.textContent = file ? "Caricamento audio…" : "Salvataggio…";
+    let newPath = null;
+    try {
+      const row = { title, lyrics: ta.value, is_published: document.getElementById("sp").checked, updated_at: new Date().toISOString() };
+      if (file) {
+        const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [, "m4a"])[1].toLowerCase();
+        newPath = `${crypto.randomUUID()}.${ext}`;
+        const { error } = await sb.storage.from("music").upload(newPath, file, { contentType: file.type || "audio/mp4", upsert: false });
+        if (error) throw error;
+        row.audio_path = newPath;
+      }
+      if (isNew) await q(sb.from("songs").insert(row));
+      else await q(sb.from("songs").update(row).eq("id", song.id));
+      if (newPath && song?.audio_path) await sb.storage.from("music").remove([song.audio_path]).catch(() => {});
+      toast("Canzone salvata");
+      if (isNew) viewMusic();
+      else viewSong(song.id);
+    } catch (e) {
+      if (newPath) await sb.storage.from("music").remove([newPath]).catch(() => {});
+      btn.disabled = false; btn.lastChild.textContent = "Salva";
+      err.innerHTML = `<div class="msg err">${esc(errText(e))}</div>`;
+    }
+  };
+}
+
 async function boot() {
   const { data } = await sb.auth.getSession();
   S.session = data.session;

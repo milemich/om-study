@@ -1,6 +1,6 @@
 # OM Study — Stato del progetto
 
-> Ultimo aggiornamento: 2026-10-14 (aggiunta sezione Music)
+> Ultimo aggiornamento: 2026-10-14 (aggiunta ambiente beta/produzione)
 
 ## Cos'è
 Web app gamificata (stile Duolingo/flashcard) per aiutare gli studenti di Biotransenergetica (BTE) a studiare i temi del corso: XP, livelli, streak giornaliere, badge, flashcard a ripetizione dilazionata (SM-2), quiz a correzione automatica, e una sezione "Libri" per studiare testi esterni tramite riassunti originali, quiz, flashcard e glossario.
@@ -13,6 +13,14 @@ Web app gamificata (stile Duolingo/flashcard) per aiutare gli studenti di Biotra
   - Progetto: `OM_Study` (project id: `auuatxzqvwjbwfketgjh`)
   - Separato dall'organizzazione `TMS` usata per il portale trasporti (altro progetto)
 - **Librerie usate** (via jsDelivr UMD, nessun npm/bundler): Supabase JS client v2.45.4, Lucide icons
+
+## Ambiente produzione vs beta (admin)
+Per poter testare nuove funzionalità senza rischiare di rompere l'esperienza degli studenti già attivi, l'app esiste in due copie nello stesso repo/branch `main`:
+- **Produzione** (`index.html`, root del sito) — quello che usano tutti gli studenti. URL: quello pubblicato in GitHub Pages.
+- **Beta** (`beta/index.html`) — stessa app, stesso Supabase/dati, ma con `const BETA_MODE = true` nello script. URL: lo stesso dominio + `/beta/`.
+  - Mostra un nastro "VERSIONE BETA" in alto.
+  - Al login, chi non ha ruolo `admin` viene disconnesso automaticamente e rimandato al sito principale (quindi è sicura anche se qualcuno trova l'URL per sbaglio).
+- Il database Supabase è **condiviso** tra le due versioni (nessun ambiente separato): scelta fatta per semplicità. I dettagli e il workflow di rilascio (beta → produzione) sono in `DECISIONI.md`.
 
 ## Architettura dati (Supabase / Postgres)
 
