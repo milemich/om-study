@@ -59,9 +59,11 @@ Gli studenti possono prendere note personali mentre leggono un capitolo di un li
 Gli studenti possono segnalare una domanda del quiz la cui risposta corretta non è presente nel riassunto fornito, con un motivo (enum) + commento libero. L'admin vede le segnalazioni raggruppate per domanda in un pannello di gestione, con azioni "risolvi"/"ignora". Vedi DECISIONI.md per la policy su cosa va corretto.
 
 ## Sezione Music
-Tab "Music" nella barra in basso: elenco canzoni, pagina canzone con lettore audio (con loop) e testo colorato su sfondo caldo. Audio nel bucket Storage privato `music` (URL firmati da 1 ora). Lettura per tutti gli utenti loggati, scrittura solo admin (`is_admin()`). L'admin crea/modifica/elimina canzoni dall'app e carica l'audio dal form (anteprima live del testo).
-Sintassi testi: `[rosso]` cambia colore da lì in poi (anche sulle righe seguenti); colori: rosso, arancio, oro, giallo, verde, azzurro, blu, viola, rosa, marrone, grigio, nero, arcobaleno, oppure `[#1a2b3c]`; il testo tra `(parentesi)` diventa più piccolo; riga vuota = spazio.
-Prima canzone inserita: "Oi vamos Saravà" (testo già presente, registrazione da caricare dall'app).
+Tab "Music" nella barra in basso: elenco canzoni e pagina canzone a schermo intero in stile **karaoke notturno** (sfondo scuro, verso attivo grande e luminoso, gli altri sfumati). Il lettore audio è custom (play/pausa, barra, loop). Se i versi hanno i tempi, l'evidenziazione segue la registrazione e toccando un verso si salta lì; senza tempi si può evidenziare i versi a mano toccandoli.
+Audio nel bucket Storage privato `music` (URL firmati da 1 ora). Lettura per tutti gli utenti loggati, scrittura solo admin (`is_admin()`). L'admin crea/modifica/elimina canzoni dall'app, carica l'audio dal form e imposta i tempi con lo strumento "Tempi del karaoke" (si fa partire l'audio e si tocca il pulsante all'inizio di ogni verso; dopo l'ultimo si riparte dal primo per le ripetizioni).
+Sintassi testi: una riga = un verso; `[rosso]` cambia colore da lì in poi (anche sulle righe seguenti); colori: rosso, arancio, oro, giallo, verde, azzurro, blu, viola, rosa, marrone, grigio, nero, arcobaleno, oppure `[#1a2b3c]`; il testo tra `(parentesi)` è più piccolo; una riga che inizia con `(` è la nota del verso sopra; `@1:35.2` (o `@0:12,1:05` per più ripetizioni) all'inizio di riga = tempo/i di inizio del verso. I colori sono schiariti automaticamente per lo sfondo scuro.
+Prima canzone inserita: "Oi vamos Saravà" (testo presente; registrazione e tempi da inserire dall'app).
+Proposte grafiche valutate (canvas "Music – testi moderni"): scelta la versione B, karaoke.
 
 ## Non fatto per ora (scelta esplicita)
 - **Assistente AI integrato in-app** (per fare domande di approfondimento sui contenuti): architettura già scoping (Edge Function + chiave Anthropic separata + cap di spesa/domande), ma rimandato — l'utente preferisce continuare a usare Claude direttamente per ora, senza costi aggiuntivi.
