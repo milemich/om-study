@@ -104,7 +104,7 @@ svg.i{width:20px;height:20px;flex:none}
 /* Nav */
 .nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10}
 .nav-in{max-width:560px;margin:0 auto;display:flex;justify-content:space-around}
-.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:12px;color:var(--ink-3);font-size:.72rem;font-weight:800;letter-spacing:.03em;position:relative}
+.nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 7px;border-radius:12px;color:var(--ink-3);font-size:.72rem;font-weight:800;letter-spacing:.03em;position:relative}
 .nav button svg{width:24px;height:24px}
 .nav button.on{color:var(--accent);background:var(--accent-soft)}
 .nav .dot{position:absolute;top:2px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--flame);color:#fff;font-size:.68rem;display:grid;place-items:center}
@@ -247,6 +247,24 @@ tr:last-child td{border-bottom:0}
 .spinner{width:34px;height:34px;border:4px solid var(--surface-2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:.9rem;z-index:50;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+/* Music */
+.song-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:0;border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
+.song-ic{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.song-ic svg{width:22px;height:22px}
+.song-t{font-weight:800;line-height:1.3}
+.player{display:flex;flex-direction:column;gap:8px}
+.player audio{width:100%}
+.lyrics{background:linear-gradient(180deg,#fffbe3 0%,#ffe9b8 55%,#ffd9a0 100%);color:#222;border-radius:var(--r);box-shadow:var(--shadow);padding:22px 12px;text-align:center;font-weight:800;font-size:clamp(1.25rem,5.6vw,1.8rem);line-height:1.2;text-shadow:1px 2px 2px rgba(0,0,0,.28);white-space:pre-wrap;overflow-wrap:anywhere}
+.ly-l{margin:0 0 .28em}
+.ly-s{font-size:.62em;font-weight:800}
+.ly-gap{height:.7em}
+.lyrics.empty{font-size:1rem;font-weight:600;text-shadow:none;color:#6a5a40}
+textarea.input{resize:vertical;min-height:180px;line-height:1.45}
+.check{display:flex;gap:10px;align-items:center;font-weight:700}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.hint{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:.84rem;line-height:1.5}
+.hint code{background:var(--surface);padding:1px 6px;border-radius:6px;font-size:.92em}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -306,7 +324,7 @@ const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle c
 // ---------- navigazione ----------
 function navHTML() {
   const due = S.stats?.cards_due || 0;
-  const items = [["path", "map", "Percorso"], ["books", "library", "Libri"], ["cards", "layers", "Ripasso"], ["profile", "user-round", "Profilo"]];
+  const items = [["path", "map", "Percorso"], ["books", "library", "Libri"], ["music", "music", "Music"], ["cards", "layers", "Ripasso"], ["profile", "user-round", "Profilo"]];
   if (S.me?.role === "admin") items.push(["admin", "settings-2", "Gestione"]);
   return `<nav class="nav"><div class="nav-in">${items.map(([k, ic, l]) =>
     `<button class="${S.tab === k ? "on" : ""}" data-tab="${k}">${ico(ic)}${l}${k === "cards" && due ? `<span class="dot">${due > 99 ? "99+" : due}</span>` : ""}</button>`).join("")}</div></nav>`;
@@ -316,7 +334,7 @@ $app.addEventListener("click", e => {
 });
 function go(tab) {
   S.tab = tab;
-  ({ path: viewPath, books: viewBooks, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
+  ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
 }
 
 // ---------- autenticazione ----------
@@ -1310,6 +1328,138 @@ async function viewAdmin() {
 }
 
 // ---------- avvio ----------
+// ---------- MUSIC ----------
+const LY_COLORS = { rosso: "#e00000", arancio: "#f26a00", oro: "#e3a700", giallo: "#f2e200", verde: "#0a7a0a", azzurro: "#1aa3e8", blu: "#1020e0", viola: "#8a3ab9", rosa: "#e0409a", marrone: "#8a4a10", grigio: "#6a6a6a", nero: "#222222" };
+const RAINBOW = ["#e00000", "#f26a00", "#e3b800", "#0a8a0a", "#1020e0", "#8a3ab9"];
+// Sintassi testi: [colore] cambia colore da lì in poi (anche sulle righe seguenti); (testo tra parentesi) = nota più piccola.
+function lyricsHTML(text) {
+  let cur = "#222222", ri = 0;
+  const paint = (t, small) => {
+    if (cur === "rainbow") return [...t].map(ch => /\s/.test(ch) ? ch : `<span style="color:${RAINBOW[ri++ % RAINBOW.length]}">${esc(ch)}</span>`).join("");
+    return `<span style="color:${cur}">${esc(t)}</span>`;
+  };
+  const out = [];
+  for (const raw of String(text || "").split("\n")) {
+    const line = raw.trimEnd();
+    if (!line.trim()) { out.push(`<div class="ly-gap"></div>`); continue; }
+    ri = 0; let html = "";
+    for (const part of line.split(/(\[[^\]]+\])/)) {
+      if (!part) continue;
+      const m = part.match(/^\[([^\]]+)\]$/);
+      if (m) { const k = m[1].trim().toLowerCase(); cur = k === "arcobaleno" ? "rainbow" : /^#[0-9a-f]{3,8}$/.test(k) ? k : (LY_COLORS[k] || cur); continue; }
+      html += part.split(/(\([^)]*\))/).filter(Boolean).map(t => /^\(.*\)$/.test(t) ? `<span class="ly-s">${paint(t, true)}</span>` : paint(t)).join("");
+    }
+    out.push(`<div class="ly-l">${html}</div>`);
+  }
+  return out.join("");
+}
+async function viewMusic() {
+  S.tab = "music";
+  render(`<div class="spinner"></div>`);
+  try {
+    await loadMe();
+    const admin = S.me?.role === "admin";
+    const songs = await q(sb.from("songs").select("id,title,audio_path,is_published").order("order_index").order("created_at"));
+    render(`<div class="stack"><div class="topbar"><h1 style="font-size:1.5rem">Music</h1></div>${statChips()}
+      <p class="muted" style="margin:0">I canti del corso: ascolta la registrazione e segui il testo.</p>
+      ${admin ? `<button class="btn ghost" id="newsong">${ico("plus")}Nuova canzone</button>` : ""}
+      ${songs.map(x => `<button class="song-row" data-song="${x.id}"><span class="song-ic">${ico("music")}</span>
+        <span style="min-width:0;flex:1"><span class="song-t">${esc(x.title)}</span>${admin && (!x.audio_path || !x.is_published) ? `<div class="small muted">${[!x.audio_path ? "audio mancante" : "", !x.is_published ? "bozza" : ""].filter(Boolean).join(" · ")}</div>` : ""}</span>
+        ${ico("chevron-right")}</button>`).join("") || `<div class="card"><p class="muted" style="margin:0">Nessuna canzone disponibile per ora.</p></div>`}
+    </div>`);
+    $app.querySelectorAll("[data-song]").forEach(b => b.onclick = () => viewSong(b.dataset.song));
+    if (admin) document.getElementById("newsong").onclick = () => editSong(null);
+  } catch (e) { renderError(e); }
+}
+async function viewSong(id) {
+  S.tab = "music";
+  render(`<div class="spinner"></div>`);
+  try {
+    const song = await q(sb.from("songs").select("*").eq("id", id).single());
+    let url = null;
+    if (song.audio_path) { const { data } = await sb.storage.from("music").createSignedUrl(song.audio_path, 3600); url = data?.signedUrl || null; }
+    const admin = S.me?.role === "admin";
+    render(`<div class="stack">
+      <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}Music</button>
+      <div class="row" style="justify-content:space-between;align-items:flex-start"><h1 style="font-size:1.6rem">${esc(song.title)}</h1>
+        ${admin ? `<button class="icon-btn" id="edit" aria-label="Modifica">${ico("pencil")}</button>` : ""}</div>
+      ${url ? `<div class="card player"><audio id="au" controls preload="metadata" src="${esc(url)}"></audio>
+        <label class="check small"><input type="checkbox" id="loop">Ripeti in loop</label></div>`
+        : `<div class="msg info">${song.audio_path ? "Non riesco a caricare la registrazione. Riprova tra poco." : "La registrazione non è ancora stata caricata."}</div>`}
+      ${song.lyrics.trim() ? `<div class="lyrics">${lyricsHTML(song.lyrics)}</div>` : ""}
+    </div>`);
+    document.getElementById("back").onclick = viewMusic;
+    if (admin) document.getElementById("edit").onclick = () => editSong(song);
+    if (url) document.getElementById("loop").onchange = e => { document.getElementById("au").loop = e.target.checked; };
+  } catch (e) { renderError(e); }
+}
+function editSong(song) {
+  const isNew = !song;
+  render(`<div class="stack">
+    <button class="link" id="back" style="align-self:flex-start">${ico("chevron-left")}Indietro</button>
+    <h1 style="font-size:1.5rem">${isNew ? "Nuova canzone" : "Modifica canzone"}</h1>
+    <form id="sf" class="stack" novalidate>
+      <div class="field"><label for="st">Titolo</label><input class="input" id="st" value="${esc(song?.title || "")}" required></div>
+      <div class="field"><label for="sa">Registrazione audio</label>
+        <input class="input" id="sa" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg">
+        ${song?.audio_path ? `<span class="small muted">Già caricata. Scegli un file solo per sostituirla.</span>` : ""}</div>
+      <div class="field"><label for="sl">Testo</label><textarea class="input" id="sl" rows="10" spellcheck="false">${esc(song?.lyrics || "")}</textarea></div>
+      <div class="hint">Colore: scrivi <code>[rosso]</code> prima del testo e vale fino al cambio (anche sulle righe dopo).
+        Colori: rosso, arancio, oro, giallo, verde, azzurro, blu, viola, rosa, marrone, grigio, nero, arcobaleno, oppure <code>[#1a2b3c]</code>.
+        Il testo tra <code>(parentesi)</code> diventa più piccolo. Riga vuota = spazio.</div>
+      <div class="label">Anteprima</div>
+      <div class="lyrics" id="prev"></div>
+      <label class="check"><input type="checkbox" id="sp" ${song?.is_published === false ? "" : "checked"}>Visibile agli studenti</label>
+      <div id="serr"></div>
+      <button class="btn" id="sbtn">${ico("save")}Salva</button>
+      ${isNew ? "" : `<button type="button" class="btn ghost" id="sdel" style="color:var(--bad)">${ico("trash-2")}Elimina canzone</button>`}
+    </form></div>`);
+  const back = () => song ? viewSong(song.id) : viewMusic();
+  document.getElementById("back").onclick = back;
+  const prev = () => { const t = document.getElementById("sl").value; const el = document.getElementById("prev"); el.className = "lyrics" + (t.trim() ? "" : " empty"); el.innerHTML = t.trim() ? lyricsHTML(t) : "Il testo apparirà qui."; };
+  document.getElementById("sl").oninput = prev; prev();
+  let armed = false;
+  const del = document.getElementById("sdel");
+  if (del) del.onclick = async () => {
+    if (!armed) { armed = true; del.lastChild.textContent = "Tocca ancora per eliminare"; return; }
+    try {
+      if (song.audio_path) await sb.storage.from("music").remove([song.audio_path]);
+      await q(sb.from("songs").delete().eq("id", song.id));
+      toast("Canzone eliminata"); viewMusic();
+    } catch (e) { toast(errText(e)); }
+  };
+  document.getElementById("sf").onsubmit = async ev => {
+    ev.preventDefault();
+    const title = document.getElementById("st").value.trim();
+    const file = document.getElementById("sa").files[0];
+    const btn = document.getElementById("sbtn"), err = document.getElementById("serr");
+    err.innerHTML = "";
+    if (!title) { err.innerHTML = `<div class="msg err">Inserisci il titolo.</div>`; return; }
+    btn.disabled = true; btn.lastChild.textContent = file ? "Caricamento audio…" : "Salvataggio…";
+    let newPath = null;
+    try {
+      const row = { title, lyrics: document.getElementById("sl").value, is_published: document.getElementById("sp").checked, updated_at: new Date().toISOString() };
+      if (file) {
+        const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [, "m4a"])[1].toLowerCase();
+        newPath = `${crypto.randomUUID()}.${ext}`;
+        const { error } = await sb.storage.from("music").upload(newPath, file, { contentType: file.type || "audio/mp4", upsert: false });
+        if (error) throw error;
+        row.audio_path = newPath;
+      }
+      if (isNew) await q(sb.from("songs").insert(row));
+      else await q(sb.from("songs").update(row).eq("id", song.id));
+      if (newPath && song?.audio_path) await sb.storage.from("music").remove([song.audio_path]).catch(() => {});
+      toast("Canzone salvata");
+      if (isNew) viewMusic();
+      else viewSong(song.id);
+    } catch (e) {
+      if (newPath) await sb.storage.from("music").remove([newPath]).catch(() => {});
+      btn.disabled = false; btn.lastChild.textContent = "Salva";
+      err.innerHTML = `<div class="msg err">${esc(errText(e))}</div>`;
+    }
+  };
+}
+
 async function boot() {
   const { data } = await sb.auth.getSession();
   S.session = data.session;
