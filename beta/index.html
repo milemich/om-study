@@ -363,7 +363,7 @@ $app.addEventListener("click", e => {
 });
 function go(tab) {
   S.tab = tab;
-  ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
+  return ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
 }
 
 // ---------- cronologia (tasto indietro) ----------
@@ -371,19 +371,27 @@ function go(tab) {
 // cronologia del browser: così il tasto "indietro" del telefono torna alla schermata
 // precedente dell'app invece di uscire. Le semplici "ricariche" della stessa schermata
 // (dopo un salvataggio, un toast, ecc.) non passano da qui e non toccano la cronologia.
-let navSeq = 0;
+// Memorizziamo anche lo scorrimento di ogni schermata, così tornando indietro si
+// ritrova lo stesso punto in cui si era (non solo la schermata giusta).
+try { history.scrollRestoration = "manual"; } catch (e) {}
+let navSeq = 0, curSeq = 0;
 const navStack = new Map();
+const scrollPos = new Map();
 function nav(renderFn) {
-  navSeq++;
+  scrollPos.set(curSeq, window.scrollY);
+  navSeq++; curSeq = navSeq;
   navStack.set(navSeq, renderFn);
   try { history.pushState({ omSeq: navSeq }, ""); } catch (e) {}
   renderFn();
 }
-window.addEventListener("popstate", e => {
+window.addEventListener("popstate", async e => {
+  scrollPos.set(curSeq, window.scrollY);
   const seq = e.state?.omSeq;
-  if (seq != null && navStack.has(seq)) {
-    try { navStack.get(seq)(); } catch (err) { renderError(err); }
-  }
+  curSeq = seq ?? 0;
+  if (seq == null || !navStack.has(seq)) return;
+  try { await navStack.get(seq)(); } catch (err) { renderError(err); return; }
+  const y = scrollPos.get(seq) || 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
 });
 
 // ---------- autenticazione ----------
@@ -1462,7 +1470,7 @@ async function viewSong(id) {
         : `<p class="kara-msg" style="padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))">${song.audio_path ? "Non riesco a caricare la registrazione. Riprova tra poco." : "La registrazione non è ancora stata caricata."}</p>`}
     </div>`, true);
     document.getElementById("back").onclick = () => { stopAudio(); history.back(); };
-    if (admin) document.getElementById("edit").onclick = () => nav(() => { stopAudio(); editSong(song); });
+    if (admin) document.getElementById("edit").onclick = () => nav(() => { stopAudio(); return editSong(song); });
     const els = [...document.querySelectorAll(".kv")];
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let active = -1;
