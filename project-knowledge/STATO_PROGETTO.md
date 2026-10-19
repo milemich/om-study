@@ -1,6 +1,6 @@
 # OM Study — Stato del progetto
 
-> Ultimo aggiornamento: 2026-10-19 (sezione Music: documentato il player karaoke e aggiunta la canzone «Saravà»; allineati i contenuti libri; in precedenza: ambiente beta/produzione)
+> Ultimo aggiornamento: 2026-10-19 (tasto indietro portato in produzione, allineata alla beta)
 
 ## Cos'è
 Web app gamificata (stile Duolingo/flashcard) per aiutare gli studenti di Biotransenergetica (BTE) a studiare i temi del corso: XP, livelli, streak giornaliere, badge, flashcard a ripetizione dilazionata (SM-2), quiz a correzione automatica, e una sezione "Libri" per studiare testi esterni tramite riassunti originali, quiz, flashcard e glossario.
@@ -21,6 +21,10 @@ Per poter testare nuove funzionalità senza rischiare di rompere l'esperienza de
   - Mostra un nastro "VERSIONE BETA" in alto.
   - Al login, chi non ha ruolo `admin` viene disconnesso automaticamente e rimandato al sito principale (quindi è sicura anche se qualcuno trova l'URL per sbaglio).
 - Il database Supabase è **condiviso** tra le due versioni (nessun ambiente separato): scelta fatta per semplicità. I dettagli e il workflow di rilascio (beta → produzione) sono in `DECISIONI.md`.
+- Attualmente **produzione e beta hanno lo stesso codice** (solo flag `BETA_MODE` e titolo pagina diversi): il 2026-10-19 è stata portata in produzione la gestione del tasto indietro con ripristino dello scorrimento (vedi sotto), testata prima in beta.
+
+## Tasto indietro / navigazione (in produzione dal 2026-10-19)
+La navigazione interna (tab, libri, capitoli, quiz, music...) usa un piccolo router basato su `history.pushState`/`popstate`: ogni volta che si entra in una nuova schermata si registra una voce in cronologia, così il tasto indietro del telefono torna alla schermata precedente dell'app invece di uscire, e ritrova anche lo stesso punto di scorrimento. I semplici aggiornamenti della stessa schermata (dopo un salvataggio, un toast, ecc.) non toccano la cronologia. Funzioni chiave: `nav(renderFn)` (push + render) e il listener `popstate` (richiama la vista salvata e ripristina lo scroll). I pulsanti "Indietro" dell'interfaccia usano `history.back()` anziché richiamare direttamente la vista precedente.
 
 ## Architettura dati (Supabase / Postgres)
 
@@ -89,4 +93,4 @@ Canzoni inserite:
 - **Assistente AI integrato in-app** (per fare domande di approfondimento sui contenuti): architettura già scoping (Edge Function + chiave Anthropic separata + cap di spesa/domande), ma rimandato — l'utente preferisce continuare a usare Claude direttamente per ora, senza costi aggiuntivi.
 
 ## Piccolo strascico tecnico
-Esiste ancora una tabella di scratch `public._stage` in Supabase (usata per importare i libri in chunk; ora contiene anche le parti 300-315 del libro di Laszlo, 400-410 di Wilber e 500-515 di Eisler), innocua e non raggiungibile dall'app/studenti. Può essere eliminata dal Table Editor di Supabase quando capita, oppure si può richiedere di ripulirla in una prossima sessione.
+Esiste ancora una tabella di scratch `public._stage` in Supabase (usata per importare i libri in chunk; ora contiene anche le parti 300-315 del libro di Laszlo, 400-410 di Wilber e 500-515 di Eisler), innocua e non raggiungibile dall'app/studenti. Può essere eliminata dal Table Editor di Supabase quando capita (i tentativi automatici di `DROP TABLE` vengono bloccati dallo strumento con stato "cancelled", serve farlo manualmente), oppure si può richiedere di ripulirla in una prossima sessione.
