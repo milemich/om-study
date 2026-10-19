@@ -359,12 +359,40 @@ function navHTML() {
     `<button class="${S.tab === k ? "on" : ""}" data-tab="${k}">${ico(ic)}${l}${k === "cards" && due ? `<span class="dot">${due > 99 ? "99+" : due}</span>` : ""}</button>`).join("")}</div></nav>`;
 }
 $app.addEventListener("click", e => {
-  const b = e.target.closest("[data-tab]"); if (b) { go(b.dataset.tab); }
+  const b = e.target.closest("[data-tab]"); if (b) { nav(() => go(b.dataset.tab)); }
 });
 function go(tab) {
   S.tab = tab;
-  ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
+  return ({ path: viewPath, books: viewBooks, music: viewMusic, cards: () => viewCards(), profile: viewProfile, admin: viewAdmin })[tab]();
 }
+
+// ---------- cronologia (tasto indietro) ----------
+// Ogni volta che si entra in una nuova schermata (nav), registriamo una voce nella
+// cronologia del browser: così il tasto "indietro" del telefono torna alla schermata
+// precedente dell'app invece di uscire. Le semplici "ricariche" della stessa schermata
+// (dopo un salvataggio, un toast, ecc.) non passano da qui e non toccano la cronologia.
+// Memorizziamo anche lo scorrimento di ogni schermata, così tornando indietro si
+// ritrova lo stesso punto in cui si era (non solo la schermata giusta).
+try { history.scrollRestoration = "manual"; } catch (e) {}
+let navSeq = 0, curSeq = 0;
+const navStack = new Map();
+const scrollPos = new Map();
+function nav(renderFn) {
+  scrollPos.set(curSeq, window.scrollY);
+  navSeq++; curSeq = navSeq;
+  navStack.set(navSeq, renderFn);
+  try { history.pushState({ omSeq: navSeq }, ""); } catch (e) {}
+  renderFn();
+}
+window.addEventListener("popstate", async e => {
+  scrollPos.set(curSeq, window.scrollY);
+  const seq = e.state?.omSeq;
+  curSeq = seq ?? 0;
+  if (seq == null || !navStack.has(seq)) return;
+  try { await navStack.get(seq)(); } catch (err) { renderError(err); return; }
+  const y = scrollPos.get(seq) || 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+});
 
 // ---------- autenticazione ----------
 function viewLogin(notice) {
@@ -520,7 +548,7 @@ async function viewPath() {
       html += `</div></section>`;
     }
     render(`<div class="stack">${html}</div>`);
-    $app.querySelectorAll("[data-lesson]").forEach(b => b.onclick = () => startLesson(b.dataset.lesson, viewPath));
+    $app.querySelectorAll("[data-lesson]").forEach(b => b.onclick = () => nav(() => startLesson(b.dataset.lesson, viewPath)));
   } catch (e) { renderError(e); }
 }
 function renderError(e) {
@@ -550,7 +578,7 @@ function bindQuit() {
     if (L.attempt && L.i > 0 && !document.getElementById("quit").dataset.armed) {
       document.getElementById("quit").dataset.armed = "1"; toast("Tocca di nuovo X per uscire: i progressi di questa lezione andranno persi"); return;
     }
-    (L.back || viewPath)();
+    history.back();
   };
 }
 function viewTheory() {
@@ -716,7 +744,7 @@ async function finishLesson() {
       <button class="btn ${r.passed ? "" : "ghost"} block" id="back">${L.back === viewPath ? "Torna al percorso" : "Torna al capitolo"}</button>
     </div></div>`, true);
   $app.querySelector(".badge-lv svg").style.cssText = "width:40px;height:40px";
-  document.getElementById("back").onclick = () => L.back();
+  document.getElementById("back").onclick = () => history.back();
   const rt = document.getElementById("retry"); if (rt) rt.onclick = () => startLesson(L.lesson.id, L.back, L.skipTheory);
 }
 function badgeNew(b) {
@@ -885,8 +913,8 @@ async function viewBooks() {
       <p class="muted" style="margin:0">Per ogni capitolo trovi una sintesi, i concetti chiave e un quiz. Leggi il capitolo nel libro, prendi le tue note, poi mettiti alla prova.</p>
       <button class="btn ghost" id="allnotes">${ico("notebook-pen")}Le mie note</button>
       ${cards || `<div class="card"><p class="muted" style="margin:0">Nessun libro disponibile per ora.</p></div>`}</div>`);
-    $app.querySelectorAll("[data-book]").forEach(b => b.onclick = () => viewBook(b.dataset.book));
-    document.getElementById("allnotes").onclick = () => viewNotes(null);
+    $app.querySelectorAll("[data-book]").forEach(b => b.onclick = () => nav(() => viewBook(b.dataset.book)));
+    document.getElementById("allnotes").onclick = () => nav(() => viewNotes(null));
   } catch (e) { renderError(e); }
 }
 async function viewBook(bookId) {
@@ -925,12 +953,12 @@ async function viewBook(bookId) {
           </span></button>`;
       }).join("")}</div>
     </div>`);
-    document.getElementById("back").onclick = viewBooks;
-    if (next) document.getElementById("cont").onclick = () => viewChapter(next.id);
-    document.getElementById("gloss").onclick = () => viewGlossary(book);
-    document.getElementById("fc").onclick = () => viewCards(book.id, book.title);
-    document.getElementById("bnotes").onclick = () => viewNotes(book.id);
-    $app.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => viewChapter(b.dataset.ch));
+    document.getElementById("back").onclick = () => history.back();
+    if (next) document.getElementById("cont").onclick = () => nav(() => viewChapter(next.id));
+    document.getElementById("gloss").onclick = () => nav(() => viewGlossary(book));
+    document.getElementById("fc").onclick = () => nav(() => viewCards(book.id, book.title));
+    document.getElementById("bnotes").onclick = () => nav(() => viewNotes(book.id));
+    $app.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => nav(() => viewChapter(b.dataset.ch)));
   } catch (e) { renderError(e); }
 }
 async function viewChapter(lessonId) {
@@ -987,11 +1015,11 @@ async function viewChapter(lessonId) {
         ${next ? `<button class="link" id="next">Cap. ${next.order_index}${ico("chevron-right")}</button>` : "<span></span>"}
       </div>
     </div>`);
-    document.getElementById("back").onclick = () => viewBook(book.id);
-    if (prev) document.getElementById("prev").onclick = () => viewChapter(prev.id);
-    if (next) document.getElementById("next").onclick = () => viewChapter(next.id);
-    document.getElementById("quiz").onclick = () => startLesson(lessonId, () => viewChapter(lessonId), true);
-    document.getElementById("gonotes").onclick = () => viewNotes(book.id);
+    document.getElementById("back").onclick = () => history.back();
+    if (prev) document.getElementById("prev").onclick = () => nav(() => viewChapter(prev.id));
+    if (next) document.getElementById("next").onclick = () => nav(() => viewChapter(next.id));
+    document.getElementById("quiz").onclick = () => nav(() => startLesson(lessonId, () => viewChapter(lessonId), true));
+    document.getElementById("gonotes").onclick = () => nav(() => viewNotes(book.id));
     bindNotes(document.getElementById("nlist"), k => { if (k === "refresh") viewChapter(lessonId); });
     document.getElementById("nf").onsubmit = async e => {
       e.preventDefault();
@@ -1033,7 +1061,7 @@ function bindNotes(container, onChange) {
     const art = e.target.closest("[data-note]"); if (!art) return;
     const id = art.dataset.note;
     const go = e.target.closest("[data-goch]");
-    if (go && go.dataset.goch) return viewChapter(go.dataset.goch);
+    if (go && go.dataset.goch) return nav(() => viewChapter(go.dataset.goch));
     if (e.target.closest("[data-ndel]")) {
       const b = e.target.closest("[data-ndel]");
       if (!b.dataset.armed) { b.dataset.armed = "1"; b.lastChild.textContent = "Conferma eliminazione"; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.lastChild.textContent = "Elimina"; } }, 4000); return; }
@@ -1136,7 +1164,7 @@ async function viewNotes(bookId) {
     });
     document.getElementById("nbook").onchange = e => { st.book = e.target.value; draw(); };
     document.getElementById("nq").oninput = e => { st.q = e.target.value; draw(); };
-    document.getElementById("back").onclick = () => bookId ? viewBook(bookId) : viewBooks();
+    document.getElementById("back").onclick = () => history.back();
 
     const build = () => {
       const list = filtered(); const groups = [];
@@ -1214,11 +1242,11 @@ async function viewGlossary(book) {
       document.getElementById("gl").innerHTML = list.length ? list.map(t => `<div class="term">
         <div class="row" style="justify-content:space-between;align-items:baseline"><b>${esc(t.term)}</b>${t.lesson_id ? `<button class="link small" data-ch="${t.lesson_id}">cap. ${capOf[t.lesson_id]}</button>` : ""}</div>
         <span class="small muted">${esc(t.definition)}</span></div>`).join("") : `<p class="muted">Nessun termine trovato.</p>`;
-      document.querySelectorAll("#gl [data-ch]").forEach(b => b.onclick = () => viewChapter(b.dataset.ch));
+      document.querySelectorAll("#gl [data-ch]").forEach(b => b.onclick = () => nav(() => viewChapter(b.dataset.ch)));
     };
     draw("");
     document.getElementById("gq").oninput = e => draw(e.target.value);
-    document.getElementById("back").onclick = () => viewBook(book.id);
+    document.getElementById("back").onclick = () => history.back();
   } catch (e) { renderError(e); }
 }
 
@@ -1413,8 +1441,8 @@ async function viewMusic() {
         <span style="min-width:0;flex:1"><span class="song-t">${esc(x.title)}</span>${admin && (!x.audio_path || !x.is_published) ? `<div class="small muted">${[!x.audio_path ? "audio mancante" : "", !x.is_published ? "bozza" : ""].filter(Boolean).join(" · ")}</div>` : ""}</span>
         ${ico("chevron-right")}</button>`).join("") || `<div class="card"><p class="muted" style="margin:0">Nessuna canzone disponibile per ora.</p></div>`}
     </div>`);
-    $app.querySelectorAll("[data-song]").forEach(b => b.onclick = () => viewSong(b.dataset.song));
-    if (admin) document.getElementById("newsong").onclick = () => editSong(null);
+    $app.querySelectorAll("[data-song]").forEach(b => b.onclick = () => nav(() => viewSong(b.dataset.song)));
+    if (admin) document.getElementById("newsong").onclick = () => nav(() => editSong(null));
   } catch (e) { renderError(e); }
 }
 async function viewSong(id) {
@@ -1441,8 +1469,8 @@ async function viewSong(id) {
         <button class="loop" id="loop" aria-label="Ripeti in loop" aria-pressed="false">${ico("repeat")}</button></div>`
         : `<p class="kara-msg" style="padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))">${song.audio_path ? "Non riesco a caricare la registrazione. Riprova tra poco." : "La registrazione non è ancora stata caricata."}</p>`}
     </div>`, true);
-    document.getElementById("back").onclick = () => { stopAudio(); viewMusic(); };
-    if (admin) document.getElementById("edit").onclick = () => { stopAudio(); editSong(song); };
+    document.getElementById("back").onclick = () => { stopAudio(); history.back(); };
+    if (admin) document.getElementById("edit").onclick = () => nav(() => { stopAudio(); return editSong(song); });
     const els = [...document.querySelectorAll(".kv")];
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let active = -1;
@@ -1510,8 +1538,7 @@ async function editSong(song) {
       <button class="btn" id="sbtn">${ico("save")}Salva</button>
       ${isNew ? "" : `<button type="button" class="btn ghost" id="sdel" style="color:var(--bad)">${ico("trash-2")}Elimina canzone</button>`}
     </form></div>`);
-  const back = () => song ? viewSong(song.id) : viewMusic();
-  document.getElementById("back").onclick = back;
+  document.getElementById("back").onclick = () => history.back();
   const ta = document.getElementById("sl"), sau = document.getElementById("sau"), box = document.getElementById("syncbox");
   // anteprima
   const prev = () => { const vs = parseLyrics(ta.value); document.getElementById("prev").innerHTML = vs.length ? versesHTML(vs) : `<p class="kara-msg">Il testo apparirà qui.</p>`; };
@@ -1556,7 +1583,7 @@ async function editSong(song) {
     try {
       if (song.audio_path) await sb.storage.from("music").remove([song.audio_path]);
       await q(sb.from("songs").delete().eq("id", song.id));
-      toast("Canzone eliminata"); viewMusic();
+      toast("Canzone eliminata"); history.go(-2); // salta anche la pagina della canzone appena eliminata
     } catch (e) { toast(errText(e)); }
   };
   document.getElementById("sf").onsubmit = async ev => {
@@ -1581,8 +1608,7 @@ async function editSong(song) {
       else await q(sb.from("songs").update(row).eq("id", song.id));
       if (newPath && song?.audio_path) await sb.storage.from("music").remove([song.audio_path]).catch(() => {});
       toast("Canzone salvata");
-      if (isNew) viewMusic();
-      else viewSong(song.id);
+      history.back();
     } catch (e) {
       if (newPath) await sb.storage.from("music").remove([newPath]).catch(() => {});
       btn.disabled = false; btn.lastChild.textContent = "Salva";
@@ -1616,7 +1642,7 @@ async function boot() {
     }
   }
   document.getElementById("beta-ribbon").hidden = !BETA_MODE;
-  go(S.tab || "path");
+  nav(() => go(S.tab || "path"));
 }
 let booted = false;
 sb.auth.onAuthStateChange((event, session) => {
@@ -1624,7 +1650,7 @@ sb.auth.onAuthStateChange((event, session) => {
   if (event === "PASSWORD_RECOVERY") S.mustSetPassword = true;
   if (!booted) return;
   if (event === "SIGNED_IN" && !S.me) setTimeout(boot, 0);
-  if (event === "SIGNED_OUT") { S.me = null; S.stats = null; S.tab = "path"; viewLogin(); }
+  if (event === "SIGNED_OUT") { S.me = null; S.stats = null; S.tab = "path"; navStack.clear(); viewLogin(); }
 });
 (async () => {
   if (linkType === "invite" || linkType === "recovery") S.mustSetPassword = true;
